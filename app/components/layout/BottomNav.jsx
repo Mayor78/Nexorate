@@ -68,15 +68,20 @@ export default function BottomNav() {
 
   const items = getNavItems();
 
-  // Don't render on message pages
-  if (!mounted || hideNav) {
-    return <div className="" />;
+  // Don't render on message pages - return empty spacer
+  if (hideNav) {
+    return <div className="h-16 md:hidden" />;
+  }
+
+  // Show loading spacer while mounting
+  if (!mounted) {
+    return <div className="h-16 md:hidden" />;
   }
 
   return (
     <>
       {/* Spacer to prevent content from hiding behind nav */}
-      <div className="" />
+      <div className="h-16 md:hidden" />
       
       <nav 
         className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-lg z-50 md:hidden"
