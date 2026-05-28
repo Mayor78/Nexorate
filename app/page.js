@@ -1,0 +1,28 @@
+'use client';
+import HeroSection from './components/home/HeroSection';
+import CategoriesSection from './components/home/CategoriesSection';
+import FeaturedListings from './components/home/FeaturedListings';
+import RecentListings from './components/home/RecentListings';
+import { useAuth } from './context/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
+
+export default function HomePage() {
+    const { user, userData, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user && userData && !userData.onboardingCompleted) {
+      router.push('/onboarding');
+    }
+  }, [user, userData, loading, router]);
+  return (
+    <div className="min-h-screen bg-light-bg pb-20 md:pb-0">
+      <HeroSection />
+      <CategoriesSection />
+      <FeaturedListings />
+      <RecentListings />
+    </div>
+  );
+}
