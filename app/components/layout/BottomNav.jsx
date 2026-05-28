@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Home, BookMarked, PlusSquare, MessageCircle, User, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
 
 const baseNavItems = [
@@ -17,8 +17,6 @@ export default function BottomNav() {
   const pathname = usePathname();
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const [mounted, setMounted] = useState(false);
 
   // Hide on message and conversation pages
@@ -31,50 +29,26 @@ export default function BottomNav() {
 
     setMounted(true);
 
-    const fetchUnreadCount = async () => {
-      try {
-        const q = query(
-          collection(db, 'conversations'),
-          where('participants', 'array-contains', user.uid)
+    const q = query(
+      collection(db, 'conversations'),
+      where('participants', 'array-contains', user.uid)
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      let totalUnread = 0;
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        const messages = data.messages || [];
+        const unreadMessages = messages.filter(msg => 
+          msg.senderId !== user.uid && !msg.read
         );
-        
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-          let totalUnread = 0;
-          snapshot.docs.forEach(doc => {
-            const data = doc.data();
-            const messages = data.messages || [];
-            const unreadMessages = messages.filter(msg => 
-              msg.senderId !== user.uid && !msg.read
-            );
-            totalUnread += unreadMessages.length;
-          });
-          setUnreadCount(totalUnread);
-        });
+        totalUnread += unreadMessages.length;
+      });
+      setUnreadCount(totalUnread);
+    });
 
-        return () => unsubscribe();
-      } catch (error) {
-        console.error('Error fetching unread count:', error);
-      }
-    };
-
-    fetchUnreadCount();
+    return () => unsubscribe();
   }, [user]);
-
-  // Handle scroll hide/show
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY > lastScrollY && currentScrollY > 50) {
-        setIsVisible(false);
-      } else if (currentScrollY < lastScrollY) {
-        setIsVisible(true);
-      }
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
 
   const getNavItems = () => {
     if (user) {
@@ -94,20 +68,18 @@ export default function BottomNav() {
 
   const items = getNavItems();
 
-  // // Don't render if not mounted or on message pages
+  // Don't render on message pages
   if (!mounted || hideNav) {
-    return <div className="h-16 md:hidden" />;
+    return <div className="" />;
   }
 
   return (
     <>
-      {/* Spacer that accounts for safe area */}
+      {/* Spacer to prevent content from hiding behind nav */}
       <div className="" />
       
       <nav 
-        className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-lg z-50 md:hidden transition-transform duration-300 ${
-          isVisible ? 'translate-y-0' : 'translate-y-full'
-        }`}
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-lg z-50 md:hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="flex justify-around items-center h-16 max-w-md mx-auto">
