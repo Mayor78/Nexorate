@@ -68,25 +68,23 @@ export default function BottomNav() {
 
   const items = getNavItems();
 
-  // Don't render on message pages - return empty spacer
+  // Don't render on message pages
   if (hideNav) {
-    return <div className="h-16 md:hidden" />;
+    return null;
   }
 
-  // Show loading spacer while mounting
+  // Show nothing while mounting (prevents flash)
   if (!mounted) {
-    return <div className="h-16 md:hidden" />;
+    return null;
   }
 
   return (
     <>
-      {/* Spacer to prevent content from hiding behind nav */}
-      <div className="h-16 md:hidden" />
+      {/* Spacer to prevent content from hiding behind nav - ONLY on mobile */}
+      <div className="block md:hidden h-16" />
       
-      <nav 
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-lg z-50 md:hidden"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      >
+      {/* Bottom Navigation - ONLY on mobile, hidden on desktop */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-lg z-50 block md:hidden">
         <div className="flex justify-around items-center h-16 max-w-md mx-auto">
           {items.map((item) => {
             const isActive = pathname === item.href;
