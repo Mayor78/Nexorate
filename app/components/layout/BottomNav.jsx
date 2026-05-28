@@ -65,10 +65,8 @@ export default function BottomNav() {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       if (currentScrollY > lastScrollY && currentScrollY > 50) {
-        // Scrolling down - hide
         setIsVisible(false);
       } else if (currentScrollY < lastScrollY) {
-        // Scrolling up - show
         setIsVisible(true);
       }
       setLastScrollY(currentScrollY);
@@ -96,17 +94,21 @@ export default function BottomNav() {
 
   const items = getNavItems();
 
-  // Don't render if not mounted or on message pages
+  // // Don't render if not mounted or on message pages
   if (!mounted || hideNav) {
     return <div className="h-16 md:hidden" />;
   }
 
   return (
     <>
+      {/* Spacer that accounts for safe area */}
+      <div className="" />
+      
       <nav 
         className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-lg z-50 md:hidden transition-transform duration-300 ${
           isVisible ? 'translate-y-0' : 'translate-y-full'
         }`}
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="flex justify-around items-center h-16 max-w-md mx-auto">
           {items.map((item) => {
@@ -137,7 +139,6 @@ export default function BottomNav() {
           })}
         </div>
       </nav>
-      <div className="h-16 md:hidden" />
     </>
   );
 }
