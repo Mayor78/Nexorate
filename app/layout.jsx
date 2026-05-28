@@ -14,7 +14,7 @@ export default function RootLayout({ children }) {
       <body className="bg-slate-50">
         <LayoutWrapper>
           {children}
-          <Footer  />
+          {/* <Footer  /> */}
         </LayoutWrapper>
       </body>
     </html>

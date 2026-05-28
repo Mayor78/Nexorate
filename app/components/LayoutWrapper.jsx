@@ -25,7 +25,8 @@ export default function LayoutWrapper({ children }) {
         </div>
       </main>
       
-     
+      {/* Footer */}
+      {!hideFooter && <Footer />}
       
       {/* Bottom Navigation - fixed at bottom, only on mobile */}
       {!hideNavigation && <BottomNav />}
