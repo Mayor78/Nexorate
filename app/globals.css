@@ -1,21 +1,56 @@
 @import "tailwindcss";
 
+/* Prevent iOS zoom on input focus - This is the most important fix */
+input, 
+textarea, 
+select {
+  font-size: 16px !important;
+}
+
+/* For smaller screens, maintain 16px minimum */
+@media (max-width: 768px) {
+  input, 
+  textarea, 
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Improve mobile touch experience */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better input styling on iOS */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+textarea,
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: 12px;
+}
+
+/* Remove default iOS input shadow */
+input:focus,
+textarea:focus {
+  outline: none;
+}
+
 @theme {
-  /* Brand Colors */
   --color-primary: #0EA5E9;
   --color-primary-dark: #0369A1;
-  
-  /* Text Colors */
   --color-dark-text: #0F172A;
   --color-dark-muted: #64748B;
-  
-  /* Background Colors */
   --color-light-bg: #F8FAFC;
-  
-  
-  
-  /* Border Radius */
-  /* --radius-xl: 1rem; */
 }
 
 /* Your existing global styles can stay */

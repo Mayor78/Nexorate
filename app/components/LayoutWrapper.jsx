@@ -9,27 +9,32 @@ import { AuthProvider } from '../context/AuthContext';
 export default function LayoutWrapper({ children }) {
   const pathname = usePathname();
   
-  // Pages where navigation should be hidden
-  const hideNavigation = pathname === '/onboarding' || pathname?.startsWith('/auth');
+  // Pages where header should be hidden
+  const hideHeader = pathname === '/onboarding' || pathname?.startsWith('/auth') || pathname?.startsWith('/messages');
+  
+  // Pages where footer should be hidden
   const hideFooter = pathname?.startsWith('/messages') || pathname === '/auth';
+  
+  // Pages where bottom navigation should be hidden
+  const hideBottomNav = pathname === '/onboarding' || pathname?.startsWith('/auth') || pathname?.startsWith('/messages');
   
   return (
     <AuthProvider>
-      {/* Header - only on non-hidden pages */}
-      {!hideNavigation && <Header />}
+      {/* Header - hidden on onboarding, auth, and messages pages */}
+      {!hideHeader && <Header />}
       
       {/* Main content */}
       <main className="min-h-screen">
-        <div className="max-w-7xl mx-auto px-2">
+        <div className="max-w-7xl mx-auto px-4">
           {children}
         </div>
       </main>
       
-      {/* Footer */}
+      {/* Footer - hidden on messages and auth pages */}
       {!hideFooter && <Footer />}
       
-      {/* Bottom Navigation - fixed at bottom, only on mobile */}
-      {!hideNavigation && <BottomNav />}
+      {/* Bottom Navigation - hidden on onboarding, auth, and messages pages */}
+      {!hideBottomNav && <BottomNav />}
     </AuthProvider>
   );
 }
