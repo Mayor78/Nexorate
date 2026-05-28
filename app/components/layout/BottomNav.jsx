@@ -81,7 +81,7 @@ export default function BottomNav() {
   return (
     <>
       {/* Spacer to prevent content from hiding behind nav - ONLY on mobile */}
-      <div className="block md:hidden h-16" />
+      <div className="block " />
       
       {/* Bottom Navigation - ONLY on mobile, hidden on desktop */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-lg z-50 block md:hidden">

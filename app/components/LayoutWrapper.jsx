@@ -15,22 +15,20 @@ export default function LayoutWrapper({ children }) {
   
   return (
     <AuthProvider>
-      {!hideNavigation && (
-        <>
-          {/* <Header /> */}
-          <BottomNav />
-        </>
-      )}
+      {/* Header - only on non-hidden pages */}
+      {!hideNavigation && <Header />}
       
-      {/* Main content area - Sidebar already provides the spacer */}
-      <div className={!hideNavigation ? "md:pl-0" : ""}>
-        <div className="flex-1">
-          <div className={!hideNavigation ? "max-w-7xl mx-auto" : ""}>
-            {children}
-          </div>
+      {/* Main content */}
+      <main className="min-h-screen">
+        <div className="max-w-7xl mx-auto px-2">
+          {children}
         </div>
-        {/* {!hideFooter && <Footer />} */}
-      </div>
+      </main>
+      
+     
+      
+      {/* Bottom Navigation - fixed at bottom, only on mobile */}
+      {!hideNavigation && <BottomNav />}
     </AuthProvider>
   );
 }
