@@ -17,7 +17,7 @@ export default function LayoutWrapper({ children }) {
     <AuthProvider>
       {!hideNavigation && (
         <>
-          <Header />
+          {/* <Header /> */}
           <BottomNav />
         </>
       )}
@@ -29,7 +29,7 @@ export default function LayoutWrapper({ children }) {
             {children}
           </div>
         </div>
-        {!hideFooter && <Footer />}
+        {/* {!hideFooter && <Footer />} */}
       </div>
     </AuthProvider>
   );
