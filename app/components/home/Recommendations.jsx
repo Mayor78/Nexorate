@@ -78,13 +78,12 @@ export default function Recommendations() {
             if (listing.title?.toLowerCase().includes(term.toLowerCase())) {
               score += 10;
             }
-            // Also check description
             if (listing.description?.toLowerCase().includes(term.toLowerCase())) {
               score += 5;
             }
           });
           
-          // Partial word match for search terms (e.g., "bag" matches "handbag")
+          // Partial word match for search terms
           topSearchTerms.forEach(term => {
             const words = listing.title?.toLowerCase().split(' ') || [];
             words.forEach(word => {
@@ -94,18 +93,15 @@ export default function Recommendations() {
             });
           });
           
-          // Boosted listings get extra points
           if (listing.isBoosted) {
             score += 5;
           }
           
-          // Higher views get slight boost
           score += (listing.views || 0) / 100;
           
           return { listing, score };
         });
         
-        // Sort by score and get top recommendations
         const topRecommendations = scoredListings
           .sort((a, b) => b.score - a.score)
           .slice(0, 15)
@@ -113,7 +109,6 @@ export default function Recommendations() {
         
         recommendedListings = topRecommendations;
         
-        // If not enough recommendations, add trending items
         if (recommendedListings.length < 8) {
           const trendingListings = [...allListings]
             .filter(l => !recommendedListings.some(r => r.id === l.id))
@@ -123,7 +118,6 @@ export default function Recommendations() {
           recommendedListings = [...recommendedListings, ...trendingListings];
         }
       } else {
-        // For new users or non-logged in, show trending across all categories
         const trendingListings = [...allListings]
           .filter(l => l.status === 'active')
           .sort((a, b) => (b.views || 0) - (a.views || 0))
@@ -141,24 +135,19 @@ export default function Recommendations() {
     }
   }, [allListings, user, userPreferences]);
 
-  // Get dynamic recommendation title
   const getTitle = () => {
     if (!user) return "Trending Now";
-    
     if (userPreferences?.topCategories?.length > 0) {
       const category = userPreferences.topCategories[0];
-      return `Recommended for You • ${category}`;
+      return `Recommended • ${category}`;
     }
-    
     if (userPreferences?.topSearchTerms?.length > 0) {
       const searchTerm = userPreferences.topSearchTerms[0];
-      return `Recommended • Based on "${searchTerm}"`;
+      return `Based on "${searchTerm}"`;
     }
-    
     return "Recommended for You";
   };
 
-  // Get see all link based on user's top interest
   const getSeeAllLink = () => {
     if (!user) return '/categories';
     if (userPreferences?.topCategories?.length > 0) {
@@ -173,14 +162,15 @@ export default function Recommendations() {
   }
 
   return (
-    <div className="py-6 bg-white border-y border-slate-100 my-4">
+    <div className="py-4 bg-white border-y border-slate-100 my-2">
       <Carousel 
         title={getTitle()} 
         seeAllLink={getSeeAllLink()}
       >
         {recommendations.map((listing) => (
-          <div key={listing.id} className="w-[280px] sm:w-[260px] md:w-[280px] flex-shrink-0">
-            <ListingCard listing={listing} />
+          /* FIXED: Removed fixed desktop widths that overrode the micro-sizing config */
+          <div key={listing.id} className="w-full">
+            {/* <ListingCard listing={listing} /> */}
           </div>
         ))}
       </Carousel>

@@ -3,6 +3,7 @@ import Link from 'next/link';
 export default function CategoryCard({ category }) {
   const getIconEmoji = (slug) => {
     const icons = {
+      'post-ads': '📢',
       phones: '📱',
       cars: '🚗',
       fashion: '👗',
@@ -23,6 +24,7 @@ export default function CategoryCard({ category }) {
   const getColorClass = (slug) => {
     const colors = {
       phones: 'bg-blue-100',
+       'post-ads': 'bg-gradient-to-r from-sky-500 to-sky-600 text-white',
       cars: 'bg-green-100',
       fashion: 'bg-pink-100',
       properties: 'bg-purple-100',
@@ -46,6 +48,7 @@ export default function CategoryCard({ category }) {
       'food-agric': 'Food & Agric',
       beauty: 'Beauty',
       trending: 'Trending',
+      'post-ads': 'Post Ad',
       phones: 'Phones',
       cars: 'Cars',
       fashion: 'Fashion',
@@ -60,14 +63,16 @@ export default function CategoryCard({ category }) {
 
   return (
     <Link href={`/categories/${category.name.toLowerCase()}`}>
-      <div className="bg-gray-100 rounded-md p-4 text-center hover:shadow-md transition-all group">
+      <div className={`bg-gray-100 rounded-md p-4 text-center hover:shadow-md transition-all group ${getColorClass(category.slug)}`}>
         <div className={`${(category.name)} w-12 h-12 rounded-full flex items-center justify-center text-3xl mx-auto mb-2 group-hover:scale-110 transition-transform`}>
           {getIconEmoji(category.slug)}
         </div>
       
         {/* <p className="text-xs text-dark-muted">{category.count} listings</p> */}
       </div>
-        <h3 className="font-semibold flex justify-center text-dark-text text-sm">{displayName(category.name)}</h3>
+        <h3 className={`font-semibold text-sm flex justify-center text-dark-text group-hover:text-sky-600 transition-colors duration-150 mt-2`}>
+            {displayName(category.name, category.slug)}
+          </h3>
     </Link>
   );
 }

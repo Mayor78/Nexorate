@@ -69,15 +69,11 @@ export default function Carousel({ children, title, seeAllLink }) {
           </button>
         )}
 
-        {/* Micro-Sized Carousel Track 
-            Enforces strict ultra-small element widths.
-            Injects nested CSS targeting parameters to hide any price labels, views, or locations inside your children cards. */}
+        {/* Scrollable Track */}
         <div
           ref={scrollContainerRef}
           onScroll={checkScrollButtons}
-          className="flex overflow-x-auto gap-2.5 px-4 md:px-6 scroll-smooth scrollbar-none select-none
-            [&>*]:w-[110px] sm:[&>*]:w-[130px] [&>*]:shrink-0 [&>*]:h-auto
-            [&_p]:hidden [&_span]:hidden [&_h3]:text-[11px] [&_h3]:mt-1 [&_h3]:line-clamp-1 [&_h3]:block"
+          className="flex overflow-x-auto gap-2.5 px-4 md:px-6 scroll-smooth"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {children}

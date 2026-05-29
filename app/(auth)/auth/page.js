@@ -10,7 +10,7 @@ import {
 
 export default function AuthPage() {
   const router = useRouter();
-  const { signup, login, loginWithGoogle, handleRedirectResult, user, loading: authLoading } = useAuth();
+  const { signup, login, loginWithGoogle, user, loading: authLoading } = useAuth();
   
   // Form state
   const [isLogin, setIsLogin] = useState(true);
@@ -22,42 +22,21 @@ export default function AuthPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [processingRedirect, setProcessingRedirect] = useState(true);
 
-  // Handle Google redirect result when page loads
+  // If already logged in, redirect to onboarding
   useEffect(() => {
-    const processRedirect = async () => {
-      try {
-        setProcessingRedirect(true);
-        console.log('Checking for redirect result...');
-        const result = await handleRedirectResult();
-        console.log('Redirect processed:', result);
-      } catch (err) {
-        console.error('Redirect processing error:', err);
-        setError('Failed to complete Google sign in. Please try again.');
-      } finally {
-        setProcessingRedirect(false);
-      }
-    };
-    
-    processRedirect();
-  }, [handleRedirectResult]);
-
-  // If already logged in, redirect to home
-  useEffect(() => {
-    if (user && !processingRedirect) {
-      console.log('User logged in, redirecting to home...');
+    if (user && !authLoading) {
       router.push('/onboarding');
     }
-  }, [user, router, processingRedirect]);
+  }, [user, authLoading, router]);
 
-  // Show loading while checking redirect or auth state
-  if (processingRedirect || authLoading) {
+  // Show loading while checking auth state
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Processing...</p>
+          <p className="text-slate-600">Loading...</p>
         </div>
       </div>
     );
@@ -142,11 +121,17 @@ export default function AuthPage() {
     setLoading(true);
     try {
       await loginWithGoogle();
-      // The page will redirect to Google, then come back
-      // The useEffect will handle the redirect result
+      // Popup will close and user will be logged in
+      // The useEffect will handle redirect to onboarding
     } catch (err) {
       console.error('Google auth error:', err);
-      setError('Failed to authenticate with Google. Please try again.');
+      if (err.code === 'auth/popup-closed-by-user') {
+        setError('Sign in cancelled. Please try again.');
+      } else if (err.code === 'auth/popup-blocked') {
+        setError('Popup was blocked. Please allow popups for this site.');
+      } else {
+        setError('Failed to authenticate with Google. Please try again.');
+      }
       setLoading(false);
     }
   };
@@ -164,7 +149,7 @@ export default function AuthPage() {
             Nexorate
           </h1>
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mt-1">
-             Premium Marketplace
+            Premium Marketplace
           </p>
         </div>
 
