@@ -13,6 +13,11 @@ const categoryNames = [
   { name: 'Personals', slug: 'personals', icon: '💕', color: 'red' },
   { name: 'Jobs', slug: 'jobs', icon: '💼', color: 'orange' },
   { name: 'Services', slug: 'services', icon: '🔧', color: 'gray' },
+  { name: 'Repair & Construction', slug: 'repair-construction', icon: '🔨', color: 'amber' },
+  { name: 'Animal & Pet', slug: 'animal-pet', icon: '🐕', color: 'emerald' },
+  { name: 'Food & Agric', slug: 'food-agric', icon: '🌽', color: 'lime' },
+  { name: 'Beauty', slug: 'beauty', icon: '💄', color: 'rose' },
+  { name: 'Trending', slug: 'trending', icon: '🔥', color: 'orange' },
 ];
 
 export function useCategories() {

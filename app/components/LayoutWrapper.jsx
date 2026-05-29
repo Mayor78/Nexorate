@@ -25,7 +25,7 @@ export default function LayoutWrapper({ children }) {
       
       {/* Main content */}
       <main className="min-h-screen">
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-7xl mx-au">
           {children}
         </div>
       </main>

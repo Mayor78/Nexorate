@@ -15,6 +15,11 @@ const categoryNames = [
   { name: 'Personals', slug: 'personals' },
   { name: 'Jobs', slug: 'jobs' },
   { name: 'Services', slug: 'services' },
+  { name: 'Repair & Construction', slug: 'repair-construction' },
+  { name: 'Animal & Pet', slug: 'animal-pet' },
+  { name: 'Food & Agric', slug: 'food-agric' },
+  { name: 'Beauty', slug: 'beauty' },
+  { name: 'Trending', slug: 'trending' },
 ];
 
 export default function CategoriesSection() {
@@ -56,14 +61,12 @@ export default function CategoriesSection() {
     <div className="px-4 py-6 md:px-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg md:text-xl font-bold text-dark-text">Browse Categories</h2>
-        <Link href="/categories" className="text-primary text-sm font-medium hover:underline">
-          See All →
-        </Link>
+      
       </div>
       
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3">
         {categories.map((category) => (
-          <CategoryCard key={category.name} category={category} />
+          <CategoryCard key={category.slug} category={category} />
         ))}
       </div>
     </div>

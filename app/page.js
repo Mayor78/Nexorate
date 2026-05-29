@@ -1,5 +1,6 @@
 'use client';
 import HeroSection from './components/home/HeroSection';
+import Recommendation from './components/home/Recommendations';
 import CategoriesSection from './components/home/CategoriesSection';
 import FeaturedListings from './components/home/FeaturedListings';
 import RecentListings from './components/home/RecentListings';
@@ -21,6 +22,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-light-bg pb-20 md:pb-0">
       <HeroSection />
       <CategoriesSection />
+       <Recommendation />
       <FeaturedListings />
       <RecentListings />
     </div>

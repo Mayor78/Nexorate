@@ -12,7 +12,7 @@ import {
   signInWithPopup,
 } from 'firebase/auth';
 import { auth, db } from '../lib/firebase/config';
-import { doc, getDoc, setDoc, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 
 const AuthContext = createContext({});
 
@@ -51,6 +51,7 @@ export function AuthProvider({ children }) {
         userType: 'individual',
         businessName: '',
         onboardingCompleted: false,
+        savedListings: [],
         emailVerified: firebaseUser.emailVerified || false,
       };
       
@@ -90,12 +91,11 @@ export function AuthProvider({ children }) {
     if (!userId) return;
     
     try {
-      const savedRef = doc(db, 'users', userId);
-      const userDoc = await getDoc(savedRef);
+      const userRef = doc(db, 'users', userId);
+      const userDoc = await getDoc(userRef);
       if (userDoc.exists() && userDoc.data().savedListings) {
         const savedIds = userDoc.data().savedListings;
         if (savedIds.length > 0) {
-          // Fetch actual listing data for each saved ID
           const savedPromises = savedIds.map(async (id) => {
             const listingRef = doc(db, 'listings', id);
             const listingDoc = await getDoc(listingRef);
@@ -115,6 +115,54 @@ export function AuthProvider({ children }) {
       console.error('Error fetching saved listings:', error);
       return [];
     }
+  };
+
+  // Toggle save/unsave a listing
+  const toggleSaveListing = async (listingId, listingData = null) => {
+    if (!user) {
+      // Redirect to login if not authenticated
+      return { success: false, needLogin: true };
+    }
+    
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      const isCurrentlySaved = savedListings.some(item => item.id === listingId);
+      
+      if (isCurrentlySaved) {
+        // Remove from saved
+        await updateDoc(userRef, {
+          savedListings: arrayRemove(listingId)
+        });
+        setSavedListings(prev => prev.filter(item => item.id !== listingId));
+        return { success: true, action: 'removed' };
+      } else {
+        // Add to saved
+        await updateDoc(userRef, {
+          savedListings: arrayUnion(listingId)
+        });
+        
+        // If listing data is provided, add it directly
+        if (listingData) {
+          setSavedListings(prev => [...prev, { id: listingId, ...listingData }]);
+        } else {
+          // Fetch listing data if not provided
+          const listingRef = doc(db, 'listings', listingId);
+          const listingDoc = await getDoc(listingRef);
+          if (listingDoc.exists()) {
+            setSavedListings(prev => [...prev, { id: listingDoc.id, ...listingDoc.data() }]);
+          }
+        }
+        return { success: true, action: 'added' };
+      }
+    } catch (error) {
+      console.error('Error toggling saved listing:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Check if a listing is saved
+  const isListingSaved = (listingId) => {
+    return savedListings.some(item => item.id === listingId);
   };
 
   // Sign up with email/password
@@ -189,7 +237,7 @@ export function AuthProvider({ children }) {
       setUser(currentUser);
       
       if (currentUser) {
-        const data = await fetchUserData(currentUser.uid);
+        await fetchUserData(currentUser.uid);
         await fetchUserListings(currentUser.uid);
         await fetchSavedListings(currentUser.uid);
         setListingsLoading(false);
@@ -206,6 +254,11 @@ export function AuthProvider({ children }) {
     return () => unsubscribe();
   }, []);
 
+  // Computed values
+  const totalListings = userListings.length;
+  const activeListings = userListings.filter(l => l.status !== 'sold').length;
+  const soldListings = userListings.filter(l => l.status === 'sold').length;
+
   const value = {
     user,
     userData,
@@ -213,6 +266,9 @@ export function AuthProvider({ children }) {
     savedListings,
     listingsLoading,
     loading,
+    totalListings,
+    activeListings,
+    soldListings,
     signup,
     login,
     loginWithGoogle,
@@ -222,6 +278,8 @@ export function AuthProvider({ children }) {
     fetchUserListings,
     fetchSavedListings,
     refreshUserData,
+    toggleSaveListing,
+    isListingSaved,
   };
 
   return (
