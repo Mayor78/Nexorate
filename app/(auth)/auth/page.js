@@ -3,25 +3,28 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import { useAuthHandler } from '../../hooks/useAuthHandler';
 import { 
   Mail, Lock, Eye, EyeOff, LogIn, UserPlus, 
-  User, CheckCircle, ArrowRight
+  User, CheckCircle, ArrowRight, AlertCircle
 } from 'lucide-react';
 
 export default function AuthPage() {
   const router = useRouter();
-  const { signup, login, loginWithGoogle, user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { error: showError, success: showSuccess, warning: showWarning } = useToast();
+  const { isIOS, loading, handleSignup, handleLogin, handleGoogleSignin, handleGoogleRedirectResult } = useAuthHandler();
   
   // Form state
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLoginForm, setIsLoginForm] = useState(true);
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [showGoogleInfo, setShowGoogleInfo] = useState(false);
+  const [iosDetected, setIosDetected] = useState(false);
 
   // If already logged in, redirect to onboarding
   useEffect(() => {
@@ -29,6 +32,16 @@ export default function AuthPage() {
       router.push('/onboarding');
     }
   }, [user, authLoading, router]);
+
+  // Check for iOS on mount
+  useEffect(() => {
+    setIosDetected(isIOS());
+  }, [isIOS]);
+
+  // Check for Google redirect result on mount
+  useEffect(() => {
+    handleGoogleRedirectResult();
+  }, [handleGoogleRedirectResult]);
 
   // Show loading while checking auth state
   if (authLoading) {
@@ -47,92 +60,61 @@ export default function AuthPage() {
     setEmail('');
     setPassword('');
     setConfirmPassword('');
-    setError('');
-    setSuccessMessage('');
   };
 
-  const handleTabSwitch = (isLoginTab) => {
-    setIsLogin(isLoginTab);
+  const handleTabSwitch = (isLogin) => {
+    setIsLoginForm(isLogin);
     resetForm();
   };
 
-  const handleSubmit = async (e) => {
+  const handleEmailSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccessMessage('');
 
-    if (!isLogin) {
+    if (!isLoginForm) {
+      // Signup validation
       if (password !== confirmPassword) {
-        setError('Passwords do not match');
+        showError('Passwords do not match');
         return;
       }
       if (password.length < 6) {
-        setError('Password must be at least 6 characters');
+        showError('Password must be at least 6 characters');
         return;
       }
       if (displayName.trim().length < 2) {
-        setError('Please enter your full name');
+        showError('Please enter your full name');
         return;
       }
-    }
 
-    setLoading(true);
-
-    try {
-      if (isLogin) {
-        await login(email, password);
-        router.push('/onboarding');
-      } else {
-        await signup(email, password, displayName);
-        setSuccessMessage('Account created successfully! Redirecting...');
+      const result = await handleSignup(email, password, displayName);
+      if (result.success) {
         setTimeout(() => router.push('/onboarding'), 1500);
       }
-    } catch (err) {
-      console.error('Auth error:', err);
-      switch (err.code) {
-        case 'auth/invalid-credential':
-          setError('Invalid email or password');
-          break;
-        case 'auth/user-not-found':
-          setError('No account found with this email');
-          break;
-        case 'auth/wrong-password':
-          setError('Incorrect password');
-          break;
-        case 'auth/email-already-in-use':
-          setError('Email already registered');
-          break;
-        case 'auth/invalid-email':
-          setError('Invalid email address');
-          break;
-        case 'auth/weak-password':
-          setError('Password is too weak');
-          break;
-        default:
-          setError(isLogin ? 'Failed to login' : 'Failed to create account');
+    } else {
+      // Login
+      const result = await handleLogin(email, password);
+      if (result.success) {
+        setTimeout(() => router.push('/onboarding'), 500);
       }
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleGoogleAuth = async () => {
-    setError('');
-    setLoading(true);
-    try {
-      await loginWithGoogle();
-      // Popup will close and user will be logged in
-      // The useEffect will handle redirect to onboarding
-    } catch (err) {
-      console.error('Google auth error:', err);
-      if (err.code === 'auth/popup-closed-by-user') {
-        setError('Sign in cancelled. Please try again.');
-      } else if (err.code === 'auth/popup-blocked') {
-        setError('Popup was blocked. Please allow popups for this site.');
-      } else {
-        setError('Failed to authenticate with Google. Please try again.');
+  const handleGoogleClick = async () => {
+    if (iosDetected) {
+      // ✅ FIXED: Show info modal on iOS instead of redirect
+      setShowGoogleInfo(true);
+    } else {
+      const result = await handleGoogleSignin();
+      if (result.success) {
+        setTimeout(() => router.push('/onboarding'), 500);
       }
-      setLoading(false);
+    }
+  };
+
+  const handleGoogleInfoContinue = async () => {
+    setShowGoogleInfo(false);
+    const result = await handleGoogleSignin();
+    if (result.success) {
+      setTimeout(() => router.push('/onboarding'), 500);
     }
   };
 
@@ -162,11 +144,11 @@ export default function AuthPage() {
               type="button"
               onClick={() => handleTabSwitch(true)}
               className={`flex-1 py-3.5 text-xs font-bold uppercase tracking-widest transition-all relative ${
-                isLogin ? 'text-sky-600 bg-white' : 'text-slate-400 hover:text-slate-600'
+                isLoginForm ? 'text-sky-600 bg-white' : 'text-slate-400 hover:text-slate-600'
               }`}
             >
               Login
-              {isLogin && (
+              {isLoginForm && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-500" />
               )}
             </button>
@@ -174,11 +156,11 @@ export default function AuthPage() {
               type="button"
               onClick={() => handleTabSwitch(false)}
               className={`flex-1 py-3.5 text-xs font-bold uppercase tracking-widest transition-all relative ${
-                !isLogin ? 'text-sky-600 bg-white' : 'text-slate-400 hover:text-slate-600'
+                !isLoginForm ? 'text-sky-600 bg-white' : 'text-slate-400 hover:text-slate-600'
               }`}
             >
               Sign Up
-              {!isLogin && (
+              {!isLoginForm && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-500" />
               )}
             </button>
@@ -187,25 +169,17 @@ export default function AuthPage() {
           {/* Form Content */}
           <div className="p-6">
             
-            {/* Success Alert */}
-            {successMessage && (
-              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-2">
-                <CheckCircle size={16} className="text-emerald-500 shrink-0" />
-                <p className="text-emerald-700 text-xs font-semibold">{successMessage}</p>
+            {iosDetected && !isLoginForm && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-2">
+                <AlertCircle size={16} className="text-blue-500 shrink-0 mt-0.5" />
+                <p className="text-blue-700 text-xs font-semibold">iOS detected: Google sign-in will use Safari.</p>
               </div>
             )}
 
-            {/* Error Alert */}
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-xl">
-                <p className="text-red-600 text-xs font-semibold">{error}</p>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
               
               {/* Full Name (Signup only) */}
-              {!isLogin && (
+              {!isLoginForm && (
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
                     Full Name
@@ -216,7 +190,7 @@ export default function AuthPage() {
                       type="text"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      required={!isLogin}
+                      required={!isLoginForm}
                       className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white transition-all duration-150"
                       placeholder="John Doe"
                     />
@@ -254,8 +228,8 @@ export default function AuthPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full pl-10 pr-12 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white transition-all duration-150"
-                    placeholder={isLogin ? '••••••••' : 'Create a password'}
+                    className="w-full pl-10 pr-10 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white transition-all duration-150"
+                    placeholder="••••••••"
                   />
                   <button
                     type="button"
@@ -268,7 +242,7 @@ export default function AuthPage() {
               </div>
 
               {/* Confirm Password (Signup only) */}
-              {!isLogin && (
+              {!isLoginForm && (
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
                     Confirm Password
@@ -279,24 +253,11 @@ export default function AuthPage() {
                       type={showPassword ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      required={!isLogin}
-                      className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white transition-all duration-150"
-                      placeholder="Confirm your password"
+                      required={!isLoginForm}
+                      className="w-full pl-10 pr-10 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white transition-all duration-150"
+                      placeholder="••••••••"
                     />
                   </div>
-                </div>
-              )}
-
-              {/* Forgot Password (Login only) */}
-              {isLogin && (
-                <div className="text-right">
-                  <button
-                    type="button"
-                    onClick={() => router.push('/forgot-password')}
-                    className="text-xs font-bold text-sky-600 hover:text-sky-500 transition"
-                  >
-                    Forgot password?
-                  </button>
                 </div>
               )}
 
@@ -304,62 +265,82 @@ export default function AuthPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 py-3 rounded-xl font-bold text-sm transition duration-150 disabled:opacity-50 flex items-center justify-center gap-1.5 active:scale-[0.995]"
+                className="w-full bg-sky-500 hover:bg-sky-600 text-white py-2.5 rounded-xl font-bold text-sm uppercase tracking-wider transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6"
               >
-                {isLogin ? <LogIn size={16} /> : <UserPlus size={16} />}
-                <span>{isLogin ? (loading ? 'Logging in...' : 'Login') : (loading ? 'Creating account...' : 'Sign Up')}</span>
-                <ArrowRight size={14}/>
+                {loading ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    {isLoginForm ? 'Logging in...' : 'Creating account...'}
+                  </>
+                ) : (
+                  <>
+                    {isLoginForm ? <LogIn size={16} /> : <UserPlus size={16} />}
+                    {isLoginForm ? 'Login' : 'Sign Up'}
+                  </>
+                )}
               </button>
-           
-             </form>
-            
+            </form>
+
             {/* Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200"></div>
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="px-3 bg-white text-slate-400 font-bold uppercase tracking-wider">or</span>
-              </div>
+            <div className="flex items-center gap-3 my-6">
+              <div className="flex-1 h-px bg-slate-200" />
+              <span className="text-xs font-semibold text-slate-400">OR</span>
+              <div className="flex-1 h-px bg-slate-200" />
             </div>
 
-            {/* Google OAuth Button */}
+            {/* Google Button */}
             <button
-              onClick={handleGoogleAuth}
+              onClick={handleGoogleClick}
               disabled={loading}
-              className="w-full border border-slate-200 bg-white text-slate-700 py-3 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-slate-50 hover:border-slate-300 transition duration-150 flex items-center justify-center gap-2"
+              className="w-full bg-white border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-900 py-2.5 rounded-xl font-bold text-sm uppercase tracking-wider transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" className="shrink-0">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontSize="14" fontWeight="bold" fill="white">G</text>
               </svg>
-              <span>{isLogin ? 'Login with Google' : 'Sign up with Google'}</span>
+              Sign in with Google
             </button>
 
-            {/* Switch Mode */}
-            <div className="text-center mt-6">
-              <p className="text-xs font-medium text-slate-500">
-                {isLogin ? "Don't have an account? " : "Already have an account? "}
-                <button
-                  type="button"
-                  onClick={() => handleTabSwitch(!isLogin)}
-                  className="text-sky-600 font-bold hover:text-sky-500 transition"
-                >
-                  {isLogin ? 'Sign up' : 'Login'}
-                </button>
-              </p>
-            </div>
+            {/* Sign Up Link (Login) or Login Link (Signup) */}
+            <p className="text-center text-xs text-slate-500 mt-6">
+              {isLoginForm ? "Don't have an account? " : 'Already have an account? '}
+              <button
+                type="button"
+                onClick={() => handleTabSwitch(!isLoginForm)}
+                className="text-sky-600 font-bold hover:underline"
+              >
+                {isLoginForm ? 'Sign up' : 'Log in'}
+              </button>
+            </p>
           </div>
         </div>
 
-        {/* Legal Text */}
-        <div className="text-center mt-6">
-          <p className="text-[10px] font-medium text-slate-400 leading-normal max-w-xs mx-auto">
-            By continuing, you agree to our Terms of Service and Privacy Policy
-          </p>
-        </div>
+        {/* iOS Google Info Modal */}
+        {showGoogleInfo && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl p-6 max-w-sm w-full sm:rounded-2xl">
+              <h2 className="text-lg font-bold text-slate-900 mb-3">Continue with Google</h2>
+              <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                You'll be redirected to Safari to complete your Google sign-in. This is normal on iOS. After signing in, you'll return to the app automatically.
+              </p>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={handleGoogleInfoContinue}
+                  disabled={loading}
+                  className="w-full bg-sky-500 hover:bg-sky-600 text-white py-2.5 rounded-xl font-bold text-sm transition disabled:opacity-50"
+                >
+                  {loading ? 'Loading...' : 'Continue to Google'}
+                </button>
+                <button
+                  onClick={() => setShowGoogleInfo(false)}
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 py-2.5 rounded-xl font-bold text-sm transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

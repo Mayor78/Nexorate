@@ -1,27 +1,21 @@
 'use client';
 
 import { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin, ChevronLeft, ChevronRight, Zap, Heart } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import LoginPrompt from './LoginPrompt';
+import { formatPrice } from '../../lib/formatters';
 
-export default function ListingCard({ listing }) {
+function ListingCard({ listing }) {
   const { user, toggleSaveListing, isListingSaved } = useAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const isSaved = isListingSaved?.(listing.id) || false;
-
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
 
   const handleSaveClick = async (e) => {
     e.preventDefault();
@@ -173,3 +167,8 @@ export default function ListingCard({ listing }) {
     </>
   );
 }
+
+// ✅ Memoize to prevent unnecessary re-renders
+export default React.memo(ListingCard, (prevProps, nextProps) => {
+  return prevProps.listing.id === nextProps.listing.id;
+});

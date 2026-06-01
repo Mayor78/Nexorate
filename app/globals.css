@@ -51,11 +51,21 @@ textarea:focus {
   --color-dark-text: #0F172A;
   --color-dark-muted: #64748B;
   --color-light-bg: #F8FAFC;
+  
+  /* Font families */
+  --font-sans: var(--font-plus-jakarta), system-ui, -apple-system, sans-serif;
+  --font-heading: var(--font-space-grotesk), system-ui, -apple-system, sans-serif;
 }
 
-/* Your existing global styles can stay */
+/* Apply fonts to elements */
 body {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

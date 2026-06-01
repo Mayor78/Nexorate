@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
+import { validateListing, validateTitle, validatePrice, validateDescription } from '../../lib/validators';
 import CategorySelector from '../../components/post/CategorySelector';
 import BasicInfoForm from '../../components/post/BasicInfoForm';
 import DynamicFieldsForm from '../../components/post/DynamicFieldsForm';
@@ -16,6 +18,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner';
 export default function PostListingPage() {
   const router = useRouter();
   const { user, userData, refreshUserData } = useAuth();
+  const { error: showError, success: showSuccess } = useToast();
   
   const [selectedCategory, setSelectedCategory] = useState('');
   const [title, setTitle] = useState('');
@@ -55,12 +58,13 @@ export default function PostListingPage() {
         throw new Error('You must be logged in to post a listing');
       }
 
-      if (images.length === 0) {
-        throw new Error('Please upload at least one image');
-      }
-
-      if (images.length > 5) {
-        throw new Error('Maximum 5 images allowed per listing');
+      // ✅ FIXED: Use validator
+      const listingValidation = validateListing({ title, price, description, category: selectedCategory, images });
+      if (!listingValidation.valid) {
+        showError(listingValidation.error);
+        setError(listingValidation.error);
+        setIsSubmitting(false);
+        return;
       }
 
       // Extract image URLs from Cloudinary uploads
@@ -73,7 +77,7 @@ export default function PostListingPage() {
         format: img.format
       }));
 
-      // Prepare listing data
+      // Prepare listing data with denormalized seller info ✅ FIXED
       const listingData = {
         title: title.trim(),
         price: parseFloat(price),
@@ -101,12 +105,16 @@ export default function PostListingPage() {
       // Refresh user data to update listings count
       await refreshUserData();
 
+      showSuccess('Listing created successfully!');
+
       // Redirect to the new listing
       router.push(`/listings/${docRef.id}`);
       
     } catch (err) {
       console.error('Error creating listing:', err);
-      setError(err.message || 'Failed to create listing. Please try again.');
+      const errorMsg = err.message || 'Failed to create listing. Please try again.';
+      setError(errorMsg);
+      showError(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
