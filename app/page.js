@@ -24,7 +24,7 @@ export default function HomePage() {
       <CategoriesSection />
        <Recommendation />
       <FeaturedListings />
-      <RecentListings />
+      {/* <RecentListings /> */}
     </div>
   );
 }

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
 import { validateListing, validateTitle, validatePrice, validateDescription } from '../../lib/validators';
 import CategorySelector from '../../components/post/CategorySelector';
@@ -17,6 +17,8 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner';
 
 export default function PostListingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams?.get('edit');
   const { user, userData, refreshUserData } = useAuth();
   const { error: showError, success: showSuccess } = useToast();
   
@@ -29,6 +31,52 @@ export default function PostListingPage() {
   const [customFields, setCustomFields] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(editId ? true : false);
+
+  // Fetch listing data if editing
+  useEffect(() => {
+    if (!editId) return;
+
+    const fetchListing = async () => {
+      try {
+        const listingRef = doc(db, 'listings', editId);
+        const listingSnap = await getDoc(listingRef);
+        
+        if (listingSnap.exists()) {
+          const data = listingSnap.data();
+          setSelectedCategory(data.category || '');
+          setTitle(data.title || '');
+          setPrice(data.price?.toString() || '');
+          setLocation(data.location || '');
+          setDescription(data.description || '');
+          setCustomFields(data.customFields || {});
+          // Convert Firestore image format to our format
+          if (data.images && Array.isArray(data.images)) {
+            setImages(data.images.map(img => ({
+              url: img.url,
+              thumbnail: img.thumbnail || img.url,
+              id: img.publicId,
+              width: img.width,
+              height: img.height,
+              format: img.format,
+              bytes: img.bytes
+            })));
+          }
+        } else {
+          showError('Listing not found');
+          router.push('/profile');
+        }
+      } catch (err) {
+        console.error('Error fetching listing:', err);
+        showError('Failed to load listing for editing');
+        router.push('/profile');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchListing();
+  }, [editId, router, showError]);
 
   // Reset custom fields when category changes
   const handleCategoryChange = (category) => {
@@ -93,26 +141,36 @@ export default function PostListingPage() {
         images: imageUrls,
         mainImage: imageUrls[0]?.url || null,
         status: 'active',
-        views: 0,
-        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
 
-      // Save to Firestore
-      const docRef = await addDoc(collection(db, 'listings'), listingData);
-      console.log('Listing created with ID:', docRef.id);
+      // Add createdAt only for new listings
+      if (!editId) {
+        listingData.createdAt = serverTimestamp();
+        listingData.views = 0;
+      }
+
+      if (editId) {
+        // Update existing listing
+        const listingRef = doc(db, 'listings', editId);
+        await updateDoc(listingRef, listingData);
+        console.log('Listing updated with ID:', editId);
+        showSuccess('Listing updated successfully!');
+        router.push(`/listings/${editId}`);
+      } else {
+        // Create new listing
+        const docRef = await addDoc(collection(db, 'listings'), listingData);
+        console.log('Listing created with ID:', docRef.id);
+        showSuccess('Listing created successfully!');
+        router.push(`/listings/${docRef.id}`);
+      }
 
       // Refresh user data to update listings count
       await refreshUserData();
-
-      showSuccess('Listing created successfully!');
-
-      // Redirect to the new listing
-      router.push(`/listings/${docRef.id}`);
       
     } catch (err) {
-      console.error('Error creating listing:', err);
-      const errorMsg = err.message || 'Failed to create listing. Please try again.';
+      console.error('Error saving listing:', err);
+      const errorMsg = err.message || 'Failed to save listing. Please try again.';
       setError(errorMsg);
       showError(errorMsg);
     } finally {
@@ -125,14 +183,21 @@ export default function PostListingPage() {
     return <LoadingSpinner message="Redirecting to login..." />;
   }
 
+  // Show loading while fetching listing data for editing
+  if (isLoading) {
+    return <LoadingSpinner message="Loading listing details..." />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 pb-20 md:pb-10">
       {/* Page Header */}
       <div className="sticky top-0 z-10 bg-white border-b border-slate-100 px-4 py-5 md:px-8">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-2xl font-black tracking-tight text-slate-900">Post a Listing</h1>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900">
+            {editId ? 'Edit Listing' : 'Post a Listing'}
+          </h1>
           <p className="text-xs font-medium text-slate-500 mt-0.5">
-            Sell, buy, or swap items across Africa easily
+            {editId ? 'Update your listing details' : 'Sell, buy, or swap items across Africa easily'}
           </p>
         </div>
       </div>

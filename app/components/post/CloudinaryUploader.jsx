@@ -49,6 +49,7 @@ export default function CloudinaryUploader({ images, onImagesChange, onRemoveIma
 
     setError('');
     setIsUploading(true);
+    const uploadedImages = [];
 
     try {
       const uploadWidget = window.cloudinary.createUploadWidget(
@@ -60,6 +61,7 @@ export default function CloudinaryUploader({ images, onImagesChange, onRemoveIma
           maxFiles: 5,
           maxFileSize: 5000000, // 5MB
           clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+          showAdvancedOptions: false,
           styles: {
             palette: {
               window: '#FFFFFF',
@@ -99,7 +101,10 @@ export default function CloudinaryUploader({ images, onImagesChange, onRemoveIma
               createdAt: new Date().toISOString()
             };
             
-            onImagesChange([...images, newImage]);
+            // Add to temporary array
+            uploadedImages.push(newImage);
+            // Update images immediately for UI feedback
+            onImagesChange([...images, ...uploadedImages.slice(uploadedImages.length - 1)]);
           }
 
           if (result && result.event === 'close') {

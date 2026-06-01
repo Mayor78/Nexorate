@@ -1,15 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { useToast } from '../../context/ToastContext';
 import ProfileHeader from '../../components/profile/ProfileHeader';
 import ContactInfoBar from '../../components/profile/ContactInfoBar';
 import ProfileTabs from '../../components/profile/ProfileTabs';
 import MyListingsTab from '../../components/profile/MyListingsTab';
 import SavedListingsTab from '../../components/profile/SavedListingsTab';
 import SettingsTab from '../../components/profile/SettingsTab';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import EditProfileModal from '../../components/profile/EditProfileModal';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -26,15 +28,23 @@ export default function ProfilePage() {
     activeListings,   // Add this
     soldListings      // Add this
   } = useAuth();
+  const { success: showSuccess, error: showError } = useToast();
   const [activeTab, setActiveTab] = useState('listings');
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const handleLogout = async () => {
-    await logout();
-    router.push('/auth');
+    try {
+      await logout();
+      showSuccess('Logged out successfully!');
+      router.push('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+      showError('Failed to logout. Please try again.');
+    }
   };
 
   const handleEditProfile = () => {
-    router.push('/onboarding');
+    setShowEditModal(true);
   };
 
   const handleDeleteListing = async (listingId) => {
@@ -82,7 +92,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 md:pb-0">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 pb-20 md:pb-0">
       {/* Profile Header */}
       <ProfileHeader 
         userData={userData}
@@ -105,30 +115,40 @@ export default function ProfilePage() {
       
       {/* Tab Content */}
       <div className="px-4 md:px-6 py-6">
-        {activeTab === 'listings' && (
-          <MyListingsTab 
-            listings={userListings}
-            formatPrice={formatPrice}
-            formatDate={formatDate}
-            onDeleteListing={handleDeleteListing}
-          />
-        )}
-        
-        {activeTab === 'saved' && (
-          <SavedListingsTab 
-            savedListings={savedListings}
-            formatPrice={formatPrice}
-          />
-        )}
-        
-        {activeTab === 'settings' && (
-          <SettingsTab 
-            userData={userData}
-            onLogout={handleLogout}
-            onEditProfile={handleEditProfile}
-          />
-        )}
+        <div className="max-w-6xl mx-auto">
+          {activeTab === 'listings' && (
+            <MyListingsTab 
+              listings={userListings}
+              formatPrice={formatPrice}
+              formatDate={formatDate}
+              onDeleteListing={handleDeleteListing}
+            />
+          )}
+          
+          {activeTab === 'saved' && (
+            <SavedListingsTab 
+              savedListings={savedListings}
+              formatPrice={formatPrice}
+            />
+          )}
+          
+          {activeTab === 'settings' && (
+            <SettingsTab 
+              userData={userData}
+              onLogout={handleLogout}
+              onEditProfile={handleEditProfile}
+            />
+          )}
+        </div>
       </div>
+
+      {/* Edit Profile Modal */}
+     <EditProfileModal 
+  isOpen={showEditModal}
+  onClose={() => setShowEditModal(false)}
+  user={user}
+  userData={userData}
+/>
     </div>
   );
 }
