@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Edit2, Trash2, Eye } from 'lucide-react';
+import { Edit2, Trash2, Eye, Zap } from 'lucide-react';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
 import ConfirmModal from '../ui/ConfirmModal';
@@ -17,7 +17,7 @@ export default function ListingItem({ listing, formatPrice, formatDate, onDelete
     setDeleting(true);
     try {
       await deleteDoc(doc(db, 'listings', listing.id));
-      onDelete?.(listing.id);
+      onDelete?.();
       setShowDeleteModal(false);
     } catch (error) {
       console.error('Error deleting listing:', error);
@@ -31,7 +31,6 @@ export default function ListingItem({ listing, formatPrice, formatDate, onDelete
     router.push(`/post?edit=${listing.id}`);
   };
 
-  // Get formatted date safely
   const getFormattedDate = () => {
     if (!listing.createdAt) return 'Recently';
     return formatDate(listing.createdAt);
@@ -39,50 +38,60 @@ export default function ListingItem({ listing, formatPrice, formatDate, onDelete
 
   return (
     <>
-      <div className="bg-white rounded-xl p-4 flex items-center justify-between flex-wrap gap-3 hover:shadow-md transition">
+      <div className="bg-white rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:shadow-md transition border border-slate-100">
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-slate-800 truncate">{listing.title}</h3>
           <p className="text-sky-600 font-medium">{formatPrice(listing.price)}</p>
           <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
             <span>{listing.views || 0} views</span>
-            <span>•</span>
+            <span>&bull;</span>
             <span>Posted {getFormattedDate()}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`px-2 py-1 rounded-full text-xs ${
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
             listing.status === 'active' ? 'bg-green-100 text-green-700' : 
             listing.status === 'sold' ? 'bg-slate-100 text-slate-600' : 'bg-yellow-100 text-yellow-700'
           }`}>
             {listing.status || 'active'}
           </span>
-          
-          {/* Action Buttons */}
-          <div className="flex items-center gap-1">
-            <Link href={`/listings/${listing.id}`}>
-              <button className="p-2 text-slate-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition" title="View">
-                <Eye size={16} />
-              </button>
-            </Link>
-            <button 
-              onClick={handleEdit}
-              className="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
-              title="Edit"
+
+          {listing.isBoosted ? (
+            <span className="px-2.5 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-bold rounded-full flex items-center gap-1 shadow-sm">
+              <Zap size={10} /> BOOSTED
+            </span>
+          ) : (
+            <button
+              onClick={() => router.push(`/listings/${listing.id}`)}
+              className="px-3 py-1.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-amber-700 text-xs font-bold rounded-lg hover:from-amber-100 hover:to-orange-100 transition flex items-center gap-1"
             >
-              <Edit2 size={16} />
+              <Zap size={12} /> Boost Ad
             </button>
-            <button 
-              onClick={() => setShowDeleteModal(true)}
-              className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-              title="Delete"
+          )}
+
+          <div className="flex items-center gap-0.5 bg-slate-50 rounded-lg p-0.5">
+            <Link href={`/listings/${listing.id}`}>
+              <span className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-slate-600 hover:text-sky-600 hover:bg-white rounded-md transition cursor-pointer">
+                <Eye size={14} /> View
+              </span>
+            </Link>
+            <button
+              onClick={handleEdit}
+              className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-slate-600 hover:text-amber-600 hover:bg-white rounded-md transition"
             >
-              <Trash2 size={16} />
+              <Edit2 size={14} /> Edit
+            </button>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-slate-600 hover:text-red-600 hover:bg-white rounded-md transition"
+            >
+              <Trash2 size={14} /> Delete
             </button>
           </div>
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}

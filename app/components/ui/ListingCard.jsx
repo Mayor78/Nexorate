@@ -8,6 +8,7 @@ import { MapPin, ChevronLeft, ChevronRight, Zap, Heart } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import LoginPrompt from './LoginPrompt';
 import { formatPrice } from '../../lib/formatters';
+import { trackListingEvent } from '../../lib/analytics';
 
 function ListingCard({ listing }) {
   const { user, toggleSaveListing, isListingSaved } = useAuth();
@@ -16,6 +17,10 @@ function ListingCard({ listing }) {
   const [isSaving, setIsSaving] = useState(false);
 
   const isSaved = isListingSaved?.(listing.id) || false;
+
+  const handleCardClick = () => {
+    trackListingEvent(listing.id, 'click', { title: listing.title }).catch(() => {});
+  };
 
   const handleSaveClick = async (e) => {
     e.preventDefault();
@@ -58,7 +63,7 @@ function ListingCard({ listing }) {
 
   return (
     <>
-      <Link href={`/listings/${listing.id}`} className="block">
+      <Link href={`/listings/${listing.id}`} className="block" onClick={handleCardClick}>
         <div className="bg-white rounded-xl overflow-hidden border border-slate-100 hover:border-slate-200 shadow-sm hover:shadow-lg transition-all duration-200 group h-full flex flex-col">
           
           {/* Image Container */}

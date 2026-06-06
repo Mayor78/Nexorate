@@ -3,7 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { doc, updateDoc, arrayUnion, onSnapshot } from 'firebase/firestore';
-import { db } from '../../../../lib/firebase/config';
+import { db } from '../../../lib/firebase/config';
 import { useAuth } from '../../../context/AuthContext';
 import { Loader2, AlertCircle, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -40,6 +40,11 @@ export default function ConversationPage() {
       (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data();
+          if (!data.participants?.includes(user.uid)) {
+            setError('You are not a participant in this conversation');
+            setLoading(false);
+            return;
+          }
           setConversation(data);
           const sortedMessages = (data.messages || []).sort((a, b) => {
             return new Date(a.timestamp) - new Date(b.timestamp);

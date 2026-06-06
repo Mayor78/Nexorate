@@ -13,27 +13,20 @@ export function useToast() {
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
-  const showToast = useCallback((message, type = TOAST.TYPES.INFO, duration = TOAST.DURATION) => {
-    const id = Date.now();
-    const toast = {
-      id,
-      message,
-      type,
-    };
-
-    setToasts(prev => [...prev, toast]);
-
-    if (duration > 0) {
-      setTimeout(() => {
-        removeToast(id);
-      }, duration);
-    }
-
-    return id;
-  }, []);
-
   const removeToast = useCallback((id) => {
     setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  const showToast = useCallback((message, type = TOAST.TYPES.INFO, duration = TOAST.DURATION) => {
+    const id = Date.now();
+    const toast = { id, message, type };
+    setToasts(prev => [...prev, toast]);
+    if (duration > 0) {
+      setTimeout(() => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+      }, duration);
+    }
+    return id;
   }, []);
 
   const success = useCallback((message, duration = TOAST.DURATION) => {

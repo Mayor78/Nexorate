@@ -168,9 +168,8 @@ export default function Recommendations() {
         seeAllLink={getSeeAllLink()}
       >
         {recommendations.map((listing) => (
-          /* FIXED: Removed fixed desktop widths that overrode the micro-sizing config */
-          <div key={listing.id} className="w-full">
-            {/* <ListingCard listing={listing} /> */}
+          <div key={listing.id} className="w-44 shrink-0">
+            <ListingCard listing={listing} />
           </div>
         ))}
       </Carousel>

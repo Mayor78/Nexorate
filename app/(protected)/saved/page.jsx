@@ -7,6 +7,7 @@ import { Heart, MapPin, Trash2, ShoppingBag, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { doc, updateDoc, arrayRemove, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
+import { formatPrice } from '../../lib/formatters';
 
 export default function SavedPage() {
   const { user } = useAuth();
@@ -79,14 +80,6 @@ export default function SavedPage() {
     }
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
-
   // Get image URL helper
   const getImageUrl = (listing) => {
     if (listing.images && listing.images.length > 0) {
@@ -125,7 +118,7 @@ export default function SavedPage() {
             </div>
             <h3 className="font-bold text-slate-800 text-lg mb-2">No saved items yet</h3>
             <p className="text-sm text-slate-500 max-w-sm mx-auto">
-              Heart listings you like and they'll appear here for easy access
+              Heart listings you like and they&apos;ll appear here for easy access
             </p>
             <Link 
               href="/categories" 

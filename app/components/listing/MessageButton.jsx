@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { MessageCircle, X } from 'lucide-react';
 import QuickMessage from './QuickMessage';
-import { doc, collection, query, where, getDocs, setDoc, updateDoc, arrayUnion, Timestamp } from 'firebase/firestore';
+import { doc, collection, query, where, getDocs, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
+import { trackListingEvent } from '../../lib/analytics';
 
 export default function MessageButton({ listing, seller, user, onNeedLogin }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -78,6 +79,7 @@ export default function MessageButton({ listing, seller, user, onNeedLogin }) {
         });
       }
 
+      trackListingEvent(listing.id, 'conversation_started', { title: listing.title }).catch(() => {});
       setIsOpen(false);
       return true;
     } catch (err) {

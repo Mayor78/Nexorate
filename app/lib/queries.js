@@ -87,4 +87,16 @@ export const QUERIES = {
       limit(50)
     );
   },
+
+  // Get boosted listings
+  getBoostedListingsQuery: () => {
+    return query(
+      collection(db, 'listings'),
+      where('isBoosted', '==', true),
+      where('status', '==', 'active'),
+      orderBy('boostLevel', 'desc'),
+      orderBy('boostStartsAt', 'desc'),
+      limit(12)
+    );
+  },
 };

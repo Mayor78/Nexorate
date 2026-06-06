@@ -2,8 +2,8 @@
 import HeroSection from './components/home/HeroSection';
 import Recommendation from './components/home/Recommendations';
 import CategoriesSection from './components/home/CategoriesSection';
+import BoostedListings from './components/home/BoostedListings';
 import FeaturedListings from './components/home/FeaturedListings';
-import RecentListings from './components/home/RecentListings';
 import { useAuth } from './context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -19,12 +19,12 @@ export default function HomePage() {
     }
   }, [user, userData, loading, router]);
   return (
-    <div className="min-h-screen bg-light-bg pb-20 md:pb-0">
+    <div className="min-h-screen bg-slate-50 pb-20 md:pb-0">
       <HeroSection />
+      <BoostedListings />
       <CategoriesSection />
        <Recommendation />
       <FeaturedListings />
-      {/* <RecentListings /> */}
     </div>
   );
 }

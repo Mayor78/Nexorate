@@ -34,7 +34,7 @@ export default function Footer() {
                 <span className="text-white">rate</span>
               </h2>
               <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                Africa's premium marketplace for buying, selling, and swapping.
+                Africa&apos;s premium marketplace for buying, selling, and swapping.
               </p>
             </div>
 

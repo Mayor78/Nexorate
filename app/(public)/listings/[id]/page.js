@@ -3,18 +3,23 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { 
-  MapPin, Phone, ChevronLeft, Star, AlertCircle, Loader2, Share2, Flag
+  MapPin, Phone, ChevronLeft, AlertCircle, Loader2, Share2, Flag, Zap, Star, BarChart3
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { doc, getDoc, collection, query, where, limit, getDocs, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../../../lib/firebase/config';
 import { useAuth } from '../../../context/AuthContext';
+import { formatPrice } from '../../../lib/formatters';
 import LoginPrompt from '../../../components/ui/LoginPrompt';
 import ImageGallery from '../../../components/listing/ImageGallery';
 import SellerInfo from '../../../components/listing/SellerInfo';
 import ListingDetails from '../../../components/listing/ListingDetails';
 import MessageButton from '../../../components/listing/MessageButton';
+import BoostModal from '../../../components/listing/BoostModal';
+import RateSellerModal from '../../../components/listing/RateSellerModal';
+import BoostAnalytics from '../../../components/listing/BoostAnalytics';
+import { trackListingEvent } from '../../../lib/analytics';
 
 export default function ListingDetailPage() {
   const params = useParams();
@@ -23,6 +28,9 @@ export default function ListingDetailPage() {
   const [isLiked, setIsLiked] = useState(false);
   const [showPhone, setShowPhone] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const [showBoostModal, setShowBoostModal] = useState(false);
+  const [showRateModal, setShowRateModal] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [listing, setListing] = useState(null);
   const [relatedListings, setRelatedListings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +61,8 @@ export default function ListingDetailPage() {
         } catch (err) {
           console.warn('Could not increment views:', err);
         }
+
+        trackListingEvent(params.id, 'view', { title: listingData.title }).catch(() => {});
 
         // Fetch seller info
         if (listingData.sellerId) {
@@ -107,14 +117,6 @@ export default function ListingDetailPage() {
       fetchListing();
     }
   }, [params.id]);
-
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
 
   // Loading state
   if (loading) {
@@ -211,6 +213,24 @@ export default function ListingDetailPage() {
               onNeedLogin={() => setShowLoginPrompt(true)}
             />
             
+            {/* Boost Button - only for listing owner */}
+            {user?.uid === listing.sellerId && !listing.isBoosted && (
+              <button
+                onClick={() => setShowBoostModal(true)}
+                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:from-amber-600 hover:to-orange-600 transition shadow-md shadow-amber-500/25"
+              >
+                <Zap size={18} /> Boost This Listing
+              </button>
+            )}
+            {listing.isBoosted && (
+              <div className="w-full bg-amber-50 border border-amber-200 p-3 rounded-xl text-center">
+                <p className="font-bold text-amber-700 flex items-center justify-center gap-1.5">
+                  <Zap size={16} /> Boosted Listing
+                </p>
+                <p className="text-xs text-amber-600 mt-0.5">Active until {new Date(listing.boostEndsAt).toLocaleDateString()}</p>
+              </div>
+            )}
+
             {!showPhone ? (
               <button 
                 onClick={() => setShowPhone(true)}
@@ -233,6 +253,26 @@ export default function ListingDetailPage() {
                 <Flag size={18} /> Report
               </button>
             </div>
+
+            {/* Analytics - visible to listing owner */}
+            {user?.uid === listing.sellerId && (
+              <button
+                onClick={() => setShowAnalytics(true)}
+                className="w-full py-2.5 border border-sky-200 text-sky-600 rounded-xl font-semibold text-sm hover:bg-sky-50 transition flex items-center justify-center gap-2"
+              >
+                <BarChart3 size={16} /> View Analytics
+              </button>
+            )}
+
+            {/* Rate Seller - not for the seller themselves */}
+            {user && user.uid !== listing.sellerId && (
+              <button
+                onClick={() => setShowRateModal(true)}
+                className="w-full py-2.5 border border-amber-200 text-amber-600 rounded-xl font-semibold text-sm hover:bg-amber-50 transition flex items-center justify-center gap-2"
+              >
+                <Star size={16} /> Rate Seller
+              </button>
+            )}
           </div>
 
           {/* Related Listings */}
@@ -270,6 +310,34 @@ export default function ListingDetailPage() {
         onClose={() => setShowLoginPrompt(false)}
         action="message the seller"
         productName={listing?.title}
+      />
+
+      {/* Boost Modal */}
+      <BoostModal
+        isOpen={showBoostModal}
+        onClose={() => setShowBoostModal(false)}
+        listing={{ id: params.id, ...listing }}
+        user={user}
+        onBoostSuccess={() => {
+          setListing(prev => ({ ...prev, isBoosted: true }));
+        }}
+      />
+
+      {/* Rate Seller Modal */}
+      <RateSellerModal
+        isOpen={showRateModal}
+        onClose={() => setShowRateModal(false)}
+        seller={seller}
+        listingId={params.id}
+        user={user}
+      />
+
+      {/* Boost Analytics */}
+      <BoostAnalytics
+        isOpen={showAnalytics}
+        onClose={() => setShowAnalytics(false)}
+        listing={{ id: params.id, ...listing }}
+        onBoost={() => setShowBoostModal(true)}
       />
     </div>
   );

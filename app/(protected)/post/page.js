@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { collection, addDoc, serverTimestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
-import { validateListing, validateTitle, validatePrice, validateDescription } from '../../lib/validators';
+import { validateListing } from '../../lib/validators';
 import CategorySelector from '../../components/post/CategorySelector';
 import BasicInfoForm from '../../components/post/BasicInfoForm';
 import DynamicFieldsForm from '../../components/post/DynamicFieldsForm';
@@ -44,6 +44,11 @@ export default function PostListingPage() {
         
         if (listingSnap.exists()) {
           const data = listingSnap.data();
+          if (data.sellerId !== user?.uid) {
+            showError('You do not have permission to edit this listing');
+            router.push('/profile');
+            return;
+          }
           setSelectedCategory(data.category || '');
           setTitle(data.title || '');
           setPrice(data.price?.toString() || '');
@@ -76,7 +81,7 @@ export default function PostListingPage() {
     };
 
     fetchListing();
-  }, [editId, router, showError]);
+  }, [editId, router, showError, user?.uid]);
 
   // Reset custom fields when category changes
   const handleCategoryChange = (category) => {
@@ -151,8 +156,14 @@ export default function PostListingPage() {
       }
 
       if (editId) {
-        // Update existing listing
+        // Verify ownership before update
         const listingRef = doc(db, 'listings', editId);
+        const existingSnap = await getDoc(listingRef);
+        if (!existingSnap.exists() || existingSnap.data().sellerId !== user.uid) {
+          showError('You do not have permission to edit this listing');
+          setIsSubmitting(false);
+          return;
+        }
         await updateDoc(listingRef, listingData);
         console.log('Listing updated with ID:', editId);
         showSuccess('Listing updated successfully!');

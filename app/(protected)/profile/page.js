@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -12,6 +12,7 @@ import SavedListingsTab from '../../components/profile/SavedListingsTab';
 import SettingsTab from '../../components/profile/SettingsTab';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import EditProfileModal from '../../components/profile/EditProfileModal';
+import { formatPrice, formatDate } from '../../lib/formatters';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -47,30 +48,8 @@ export default function ProfilePage() {
     setShowEditModal(true);
   };
 
-  const handleDeleteListing = async (listingId) => {
+  const handleDeleteListing = async () => {
     await refreshUserData();
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Unknown';
-    // Handle Firestore Timestamp
-    let date;
-    if (dateString?.toDate) {
-      date = dateString.toDate();
-    } else {
-      date = new Date(dateString);
-    }
-    // Check if date is valid
-    if (isNaN(date.getTime())) return 'Recently';
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  };
-
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-    }).format(price);
   };
 
   // Show loading state

@@ -5,11 +5,13 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   MapPin, Star, MessageSquare, ChevronLeft, 
-  ShieldCheck, Clock, Package, Heart, CheckCircle2, Eye, Loader2
+  ShieldCheck, Heart, CheckCircle2, Eye, Loader2, AlertCircle, Package
 } from 'lucide-react';
 import Image from 'next/image';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../../lib/firebase/config';
+import { getSellerReviews, getSellerRatingSummary } from '../../../lib/reviews';
+import RatingStars from '../../../components/profile/RatingStars';
 
 export default function SellerProfilePage() {
   const params = useParams();
@@ -17,6 +19,8 @@ export default function SellerProfilePage() {
   const [activeTab, setActiveTab] = useState('listings');
   const [seller, setSeller] = useState(null);
   const [sellerListings, setSellerListings] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [ratingSummary, setRatingSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -25,7 +29,6 @@ export default function SellerProfilePage() {
       try {
         setLoading(true);
 
-        // Fetch seller data from users collection
         const userRef = doc(db, 'users', params.id);
         const userSnap = await getDoc(userRef);
 
@@ -90,6 +93,9 @@ export default function SellerProfilePage() {
           .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
         
         setSellerListings(listings);
+
+        getSellerReviews(params.id).then(setReviews).catch(() => {});
+        getSellerRatingSummary(params.id).then(setRatingSummary).catch(() => {});
       } catch (err) {
         console.error('Error fetching seller data:', err);
         setError(err.message);
@@ -102,6 +108,13 @@ export default function SellerProfilePage() {
       fetchSellerData();
     }
   }, [params.id]);
+
+  useEffect(() => {
+    if (activeTab === 'reviews' && params.id) {
+      getSellerReviews(params.id).then(setReviews).catch(() => {});
+      getSellerRatingSummary(params.id).then(setRatingSummary).catch(() => {});
+    }
+  }, [activeTab, params.id]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-NG', {
@@ -316,23 +329,60 @@ export default function SellerProfilePage() {
           {/* TAB 2: SYSTEM USER REVIEWS SCORES */}
           {activeTab === 'reviews' && (
             <div className="space-y-4 animate-fadeIn">
-              {/* Aggregated Analytics Card */}
               <div className="bg-white border border-slate-100 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-sm">
                 <div>
-                  <p className="text-3xl font-black text-slate-900">{seller.rating || 0}</p>
-                  <div className="flex items-center gap-0.5 mt-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star key={star} size={13} className={`${star <= Math.floor(seller.rating || 0) ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />
-                    ))}
-                  </div>
-                  <p className="text-[11px] font-semibold text-slate-400 mt-1">Ecosystem Evaluation rating profile logs ({seller.totalReviews || 0})</p>
+                  <p className="text-3xl font-black text-slate-900">{ratingSummary?.average || seller.rating || 0}</p>
+                  <RatingStars rating={Math.floor(ratingSummary?.average || seller.rating || 0)} size={13} className="mt-1" />
+                  <p className="text-[11px] font-semibold text-slate-400 mt-1">{ratingSummary?.total || seller.totalReviews || 0} reviews</p>
                 </div>
+                {ratingSummary && ratingSummary.total > 0 && (
+                  <div className="flex-1 space-y-1">
+                    {[5, 4, 3, 2, 1].map((star) => {
+                      const count = ratingSummary.distribution[star] || 0;
+                      const pct = ratingSummary.total > 0 ? (count / ratingSummary.total) * 100 : 0;
+                      return (
+                        <div key={star} className="flex items-center gap-2">
+                          <span className="text-[10px] font-medium text-slate-500 w-3">{star}</span>
+                          <Star size={10} className="fill-amber-400 text-amber-400" />
+                          <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-amber-400 rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="text-[10px] text-slate-400 w-6 text-right">{count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-              
-              {/* Empty Feedback Notice Area */}
-              <div className="text-center py-12 bg-white border border-slate-100 rounded-xl shadow-sm">
-                <p className="text-slate-400 font-medium text-xs">No peer evaluation history records verified for this account terminal.</p>
-              </div>
+
+              {reviews.length === 0 ? (
+                <div className="text-center py-12 bg-white border border-slate-100 rounded-xl shadow-sm">
+                  <Star size={32} className="text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-400 font-medium text-xs">No reviews yet for this seller</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {reviews.map((review) => {
+                    const reviewDate = review.createdAt?.toDate?.() || new Date();
+                    return (
+                      <div key={review.id} className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm">
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <div>
+                            <p className="font-bold text-sm text-slate-900">{review.reviewerName || 'Anonymous'}</p>
+                            <RatingStars rating={review.rating} size={12} />
+                          </div>
+                          <span className="text-[10px] font-medium text-slate-400">
+                            {reviewDate.toLocaleDateString()}
+                          </span>
+                        </div>
+                        {review.comment && (
+                          <p className="text-xs text-slate-600 leading-relaxed">{review.comment}</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
