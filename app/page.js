@@ -21,9 +21,11 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-slate-50 pb-20 md:pb-0">
       <HeroSection />
-      <BoostedListings />
-      <CategoriesSection />
        <Recommendation />
+      <CategoriesSection />
+      <BoostedListings />
+      
+      
       <FeaturedListings />
     </div>
   );
