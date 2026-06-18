@@ -8,9 +8,9 @@ import Footer from './layout/Footer';
 export default function LayoutWrapper({ children }) {
   const pathname = usePathname();
   
-  const hideHeader = pathname === '/onboarding' || pathname?.startsWith('/auth') || pathname?.startsWith('/messages');
-  const hideFooter = pathname?.startsWith('/messages') || pathname === '/auth';
-  const hideBottomNav = pathname === '/onboarding' || pathname?.startsWith('/auth') || pathname?.startsWith('/messages');
+  const hideHeader = pathname === '/onboarding' || pathname?.startsWith('/auth') || pathname?.startsWith('/messages') || pathname?.startsWith('/admin');
+  const hideFooter = pathname?.startsWith('/messages') || pathname === '/auth' || pathname?.startsWith('/admin');
+  const hideBottomNav = pathname === '/onboarding' || pathname?.startsWith('/auth') || pathname?.startsWith('/messages') || pathname?.startsWith('/admin');
   
   return (
     <>

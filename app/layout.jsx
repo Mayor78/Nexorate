@@ -3,6 +3,7 @@ import LayoutWrapper from './components/LayoutWrapper';
 import { Plus_Jakarta_Sans, Space_Grotesk } from 'next/font/google';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import Providers from './providers';
+import { ToastProvider } from './context/ToastContext';
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -29,7 +30,10 @@ export default function RootLayout({ children }) {
         <ErrorBoundary>
           <Providers>
             <LayoutWrapper>
-              {children}
+              <ToastProvider>
+                    {children}
+              </ToastProvider>
+            
             </LayoutWrapper>
           </Providers>
         </ErrorBoundary>

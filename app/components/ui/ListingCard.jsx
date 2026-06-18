@@ -67,7 +67,7 @@ function ListingCard({ listing }) {
         <div className="bg-white rounded-xl overflow-hidden border border-slate-100 hover:border-slate-200 shadow-sm hover:shadow-lg transition-all duration-200 group h-full flex flex-col">
           
           {/* Image Container */}
-          <div className="relative w-full h-48 bg-slate-100 overflow-hidden">
+          <div className="relative w-full h-60 md:h-80 bg-slate-100 overflow-hidden">
             {totalImages > 0 && getCurrentImageUrl() ? (
               <>
                 <Image 

@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
 import { getUserPreferences } from '../../lib/tracking/userActivity';
-import ListingCard from '../ui/ListingCard';
+import RecommendationCard from '../ui/RecommendationCard';
 import Carousel from '../ui/Carousel';
 
 export default function Recommendations() {
@@ -162,14 +162,14 @@ export default function Recommendations() {
   }
 
   return (
-    <div className="py-4 bg-white border-y border-slate-100 my-2">
+    <div className="py-3 bg-white border-y border-slate-100 my-2">
       <Carousel 
         title={getTitle()} 
         seeAllLink={getSeeAllLink()}
       >
         {recommendations.map((listing) => (
-          <div key={listing.id} className="w-44 shrink-0">
-            <ListingCard listing={listing} />
+          <div key={listing.id} className="w-[160px] sm:w-[180px] shrink-0">
+            <RecommendationCard listing={listing} />
           </div>
         ))}
       </Carousel>

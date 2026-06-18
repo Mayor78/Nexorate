@@ -188,27 +188,7 @@ export default function CategoriesPage() {
       </div>
 
       {/* Matte Category Filters Strip Selection Row */}
-      <div className="bg-white border-b border-slate-100 px-4 md:px-8 overflow-x-auto scrollbar-none">
-        <div className="max-w-7xl mx-auto flex gap-2 py-3">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => {
-                const newSlug = cat === 'All' ? 'all' : cat.toLowerCase();
-                setSelectedCategory(cat);
-                window.history.pushState({}, '', `/categories/${newSlug}`);
-              }}
-              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all duration-150 ${
-                selectedCategory === cat
-                  ? 'bg-sky-500 text-slate-950 shadow-sm shadow-sky-500/10'
-                  : 'bg-slate-50 border border-slate-100 text-slate-500 hover:bg-slate-100 hover:text-slate-800'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
+    
 
       {/* Metric Stream Controls Strip */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 flex items-center justify-between py-4">
