@@ -32,7 +32,7 @@ export default function ProfileHeader({ userData, totalListings, activeListings,
                 <div className="w-28 h-28 md:w-32 md:h-32 bg-gradient-to-br from-sky-100 to-cyan-100 rounded-2xl border-4 border-white shadow-lg flex items-center justify-center overflow-hidden">
                   {userData.avatar ? (
                     <div className="w-full h-full relative">
-                      <img 
+                      <image 
                         src={userData.avatar} 
                         alt={userData.displayName} 
                         className="w-full h-full object-cover"
@@ -122,10 +122,11 @@ export default function ProfileHeader({ userData, totalListings, activeListings,
                   <span>Message</span>
                 </button>
                 <button 
-                  className="w-full md:w-auto bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold py-2 px-3 rounded-lg transition"
+                  className="w-full md:w-auto bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold py-2.5 px-4 rounded-lg transition flex items-center justify-center gap-2"
                   title="Share Profile"
                 >
                   <Share2 size={18} />
+                   <span>Share Profile</span>
                 </button>
               </div>
             </div>
