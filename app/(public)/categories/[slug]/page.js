@@ -165,7 +165,7 @@ export default function CategoriesPage() {
     <div className="min-h-screen bg-slate-50 pb-20 md:pb-12">
       
       {/* Sticky Premium Header Shield */}
-      <div className="sticky top-0 z-10 bg-white border-b border-slate-100 px-4 py-4 md:px-8">
+      <div className="sticky top-5 z-20 bg-white border-b border-slate-100 px-4 py-4 md:px-8">
         <div className="max-w-7xl mx-auto space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-900">

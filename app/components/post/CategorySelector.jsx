@@ -15,7 +15,7 @@ export default function CategorySelector({ selectedCategory, onChange }) {
           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl appearance-none text-sm text-slate-900 focus:outline-none focus:border-sky-500 focus:bg-white transition-all duration-150"
           required
         >
-          <option value="" className="text-slate-400">Select structural marketplace node</option>
+          <option value="" className="text-slate-400">Select Categories</option>
           {categories.map(cat => (
             <option key={cat} value={cat}>{cat}</option>
           ))}

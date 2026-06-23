@@ -81,7 +81,7 @@ export default function AdminSidebar({ isOpen, setIsOpen, isMobile }) {
       {/* Footer */}
       {isOpen && (
         <div className="p-4 border-t border-gray-700 text-xs text-gray-400">
-          <p>Marketplace Admin</p>
+          <p> Admin</p>
           <p>Version 1.0.0</p>
         </div>
       )}

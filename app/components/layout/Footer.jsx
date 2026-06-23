@@ -42,7 +42,7 @@ export default function Footer() {
       links: [
         { label: 'Lagos, Nigeria', href: '#', icon: MapPin },
         { label: 'support@nexorate.ng', href: 'mailto:support@nexorate.ng', icon: Mail },
-        { label: '+234 801 234 5678', href: 'tel:+2348012345678', icon: Phone },
+        { label: '+234 7084718050', href: 'tel:+2347084718050', icon: Phone },
       ],
     },
   ];
@@ -72,21 +72,19 @@ export default function Footer() {
           <motion.div
             whileHover={{ scale: 1.02, y: -4 }}
             transition={{ type: 'spring', stiffness: 300 }}
-            className="relative w-full aspect-video md:aspect-[16/6] rounded-3xl overflow-hidden shadow-2xl shadow-sky-500/10"
+            className="relative w-full aspect-video md:aspect-16/6 rounded-3xl overflow-hidden shadow-2xl shadow-sky-500/10"
           >
             <Image
               src={test}
               alt="Nexorate Marketplace"
               fill
-              sizes="(max-width: 768px) 100vw, 80vw"
+              // sizes="(max-width: 768px) 100vw, 80vw"
               className="object-cover"
               priority
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/30 to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-slate-950/30 to-transparent" />
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
-              <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-4 border border-white/10">
-                <Zap size={28} className="text-white" />
-              </div>
+           
               <p className="text-white text-lg md:text-2xl font-bold max-w-lg drop-shadow-lg">
                 Join thousands buying and selling across Nigeria
               </p>

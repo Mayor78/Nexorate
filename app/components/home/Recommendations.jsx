@@ -168,7 +168,7 @@ export default function Recommendations() {
         seeAllLink={getSeeAllLink()}
       >
         {recommendations.map((listing) => (
-          <div key={listing.id} className="w-[160px] sm:w-[180px] shrink-0">
+          <div key={listing.id} className="w-40 sm:w-45 shrink-0">
             <RecommendationCard listing={listing} />
           </div>
         ))}

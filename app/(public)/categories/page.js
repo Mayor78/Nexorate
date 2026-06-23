@@ -172,7 +172,7 @@ export default function CategorySlugPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20 md:pb-0">
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-3 md:px-6">
+      <div className="sticky top-0 z-20 bg-white border-b border-gray-100 px-4 py-3 md:px-6">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-xl md:text-2xl font-bold text-slate-900">
             {showTrending ? 'Trending Now' : selectedCategory === 'All' ? 'All Listings' : `${selectedCategory} Listings`}
@@ -190,7 +190,7 @@ export default function CategorySlugPage() {
             }}
             className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               showTrending
-                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25'
+                ? 'bg-linear-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/25'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >

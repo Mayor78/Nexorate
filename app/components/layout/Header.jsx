@@ -71,9 +71,9 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex-shrink-0 flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-sky-500 to-sky-600 rounded-lg flex items-center justify-center">
+            {/* <div className="w-8 h-8 bg-gradient-to-br from-sky-500 to-sky-600 rounded-lg flex items-center justify-center">
               <Zap size={16} className="text-white" />
-            </div>
+            </div> */}
             <h1 className="text-2xl font-black tracking-tight">
               <span className="text-sky-600">Nexo</span>
               <span className="text-slate-900">rate</span>
