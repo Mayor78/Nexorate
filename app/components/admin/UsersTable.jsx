@@ -12,6 +12,18 @@ import { banUser, unbanUser, deleteUser, makeAdmin, removeAdmin } from '../../li
 import { useToast } from '../../context/ToastContext';
 import ConfirmActionModal from './ConfirmActionModal';
 
+// Format date safely (handles ISO strings, Firestore timestamps, and missing values)
+const formatDate = (dateValue) => {
+  if (!dateValue) return '-';
+  try {
+    const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString();
+  } catch {
+    return '-';
+  }
+};
+
 export default function UsersTable({ users, loading, onRefresh, onViewUser }) {
   const [search, setSearch] = useState('');
   const [actionModal, setActionModal] = useState(null);
@@ -23,19 +35,6 @@ export default function UsersTable({ users, loading, onRefresh, onViewUser }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
   const { success: showSuccess, error: showError } = useToast();
-
-  // Format date safely (handles ISO strings, Firestore timestamps, and missing values)
-  const formatDate = (dateValue) => {
-    if (!dateValue) return '-';
-    try {
-      // Firestore Timestamp has toDate(), ISO string works directly
-      const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
-      if (isNaN(date.getTime())) return '-';
-      return date.toLocaleDateString();
-    } catch {
-      return '-';
-    }
-  };
 
   const itemsPerPageOptions = [12, 24, 48, 96];
 

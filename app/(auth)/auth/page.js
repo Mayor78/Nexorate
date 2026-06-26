@@ -111,35 +111,57 @@ function LeftPanel({ isLogin }) {
 // ─── Login Form ──────────────────────────────────────────────────────────────
 
 function LoginForm({ onSwitch, isIos }) {
-  const router = useRouter();
-  const { loading, handleLogin, handleGoogleSignin } = useAuthHandler();
+  const { loading, handleLogin, handleGoogleSignin, handlePasswordReset } = useAuthHandler();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [formError, setFormError] = useState('');
+  const [forgotMode, setForgotMode] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
-    const result = await handleLogin(email, password);
-    if (result.success) {
-      router.push('/');
-    }
+    await handleLogin(email, password);
   };
 
   const handleGoogle = async () => {
-    const result = await handleGoogleSignin();
+    await handleGoogleSignin();
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!email.includes('@')) {
+      setFormError('Enter your email address first');
+      return;
+    }
+    setResetLoading(true);
+    setFormError('');
+    const result = await handlePasswordReset(email);
+    setResetLoading(false);
     if (result.success) {
-      router.push('/');
+      setResetSent(true);
+      setForgotMode(false);
     }
   };
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-black text-gray-900 tracking-tight">Sign in</h1>
-        <p className="text-sm text-gray-400 mt-1">Enter your details to continue</p>
+        <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+          {forgotMode ? 'Reset password' : 'Sign in'}
+        </h1>
+        <p className="text-sm text-gray-400 mt-1">
+          {forgotMode ? 'Enter your email to receive a reset link' : 'Enter your details to continue'}
+        </p>
       </div>
+
+      {resetSent && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-2.5 text-sm text-emerald-600">
+          Password reset email sent! Check your inbox.
+        </div>
+      )}
 
       {formError && (
         <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2.5 text-sm text-red-600">
@@ -147,39 +169,75 @@ function LoginForm({ onSwitch, isIos }) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <Field label="Email Address">
-          <Input
-            icon={Mail}
-            type="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </Field>
+      {forgotMode ? (
+        <form onSubmit={handleForgotPassword} className="flex flex-col gap-4">
+          <Field label="Email Address">
+            <Input
+              icon={Mail}
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </Field>
 
-        <Field label="Password">
-          <Input
-            icon={Lock}
-            type={showPw ? 'text' : 'password'}
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            right={
-              <button type="button" onClick={() => setShowPw(!showPw)} className="text-gray-400 hover:text-gray-600">
-                {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
-            }
-          />
-        </Field>
-
-        <div className="flex justify-end">
-          <button type="button" className="text-xs text-gray-400 hover:text-black transition-colors">
-            Forgot password?
+          <button
+            type="submit"
+            disabled={resetLoading}
+            className="w-full bg-black text-white text-sm font-bold py-3 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mt-1"
+          >
+            {resetLoading ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+            {resetLoading ? 'Sending…' : 'Send Reset Link'}
           </button>
-        </div>
+
+          <button
+            type="button"
+            onClick={() => { setForgotMode(false); setFormError(''); setResetSent(false); }}
+            className="text-center text-sm text-gray-500 hover:text-black transition-colors"
+          >
+            Back to sign in
+          </button>
+        </form>
+      ) : (
+        <>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <Field label="Email Address">
+              <Input
+                icon={Mail}
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </Field>
+
+            <Field label="Password">
+              <Input
+                icon={Lock}
+                type={showPw ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                right={
+                  <button type="button" onClick={() => setShowPw(!showPw)} className="text-gray-400 hover:text-gray-600">
+                    {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                }
+              />
+            </Field>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => { setForgotMode(true); setFormError(''); setResetSent(false); }}
+                className="text-xs text-gray-400 hover:text-black transition-colors"
+              >
+                Forgot password?
+              </button>
+            </div>
 
         <button
           type="submit"
@@ -217,6 +275,8 @@ function LoginForm({ onSwitch, isIos }) {
           Sign up
         </button>
       </p>
+          </>
+        )}
     </div>
   );
 }
@@ -434,8 +494,7 @@ function GoogleIcon() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AuthPage() {
-  const router = useRouter();
-  const { user, userData, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   const { isIOS, handleGoogleRedirectResult } = useAuthHandler();
   const [isLogin, setIsLogin] = useState(true);
   const [isIos, setIsIos] = useState(false);
@@ -449,13 +508,6 @@ export default function AuthPage() {
   useEffect(() => {
     handleGoogleRedirectResult();
   }, [handleGoogleRedirectResult]);
-
-  // Redirect already-logged-in users
-  useEffect(() => {
-    if (user && !authLoading && userData) {
-      router.push('/');
-    }
-  }, [user, userData, authLoading, router]);
 
   if (authLoading) {
     return (
