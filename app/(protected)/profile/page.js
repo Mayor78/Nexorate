@@ -62,9 +62,6 @@ export default function ProfilePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-slate-600">User data not found</p>
-          <button onClick={() => router.push('/onboarding')} className="mt-4 text-sky-500">
-            Complete onboarding
-          </button>
         </div>
       </div>
     );

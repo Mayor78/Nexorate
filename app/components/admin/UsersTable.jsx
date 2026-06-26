@@ -24,6 +24,19 @@ export default function UsersTable({ users, loading, onRefresh, onViewUser }) {
   const [showFilters, setShowFilters] = useState(false);
   const { success: showSuccess, error: showError } = useToast();
 
+  // Format date safely (handles ISO strings, Firestore timestamps, and missing values)
+  const formatDate = (dateValue) => {
+    if (!dateValue) return '-';
+    try {
+      // Firestore Timestamp has toDate(), ISO string works directly
+      const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
+      if (isNaN(date.getTime())) return '-';
+      return date.toLocaleDateString();
+    } catch {
+      return '-';
+    }
+  };
+
   const itemsPerPageOptions = [12, 24, 48, 96];
 
   // Filter users
@@ -307,7 +320,7 @@ export default function UsersTable({ users, loading, onRefresh, onViewUser }) {
                   <td className="py-3 px-4 text-sm text-slate-500">
                     <div className="flex items-center gap-1.5">
                       <Calendar size={12} className="text-slate-400" />
-                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
+                      {formatDate(user.createdAt)}
                     </div>
                   </td>
                   <td className="py-3 px-4">
@@ -528,7 +541,7 @@ function UserCard({ user, onView, onAction, openMenuId, setOpenMenuId }) {
         {/* Join Date */}
         <div className="flex items-center gap-1.5 mt-3 text-xs text-slate-400">
           <Calendar size={12} />
-          <span>Joined {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</span>
+          <span>Joined {formatDate(user.createdAt)}</span>
         </div>
 
         {/* Action Buttons */}

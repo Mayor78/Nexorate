@@ -10,13 +10,12 @@ export default function AuthLayout({ children }) {
 
   useEffect(() => {
     if (!loading) {
-      // If already logged in and onboarded, go to home
-      if (user && userData?.onboardingCompleted) {
-        router.push('/');
-      }
-      // If logged in but not onboarded, go to onboarding
-      else if (user && !userData?.onboardingCompleted) {
-        router.push('/onboarding');
+      if (user && userData) {
+        if (userData.role === 'admin') {
+          router.push('/admin');
+        } else {
+          router.push('/');
+        }
       }
     }
   }, [user, userData, loading, router]);

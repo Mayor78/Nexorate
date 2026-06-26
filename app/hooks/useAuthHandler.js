@@ -25,6 +25,11 @@ export function useAuthHandler() {
     return /iPad|iPhone|iPod/.test(navigator.userAgent);
   }, []);
 
+  const isAndroid = useCallback(() => {
+    if (typeof window === 'undefined') return false;
+    return /Android/.test(navigator.userAgent);
+  }, []);
+
   const handleSignup = useCallback(async (email, password, displayName) => {
     setLoading(true);
     try {
@@ -126,6 +131,7 @@ export function useAuthHandler() {
 
   return {
     isIOS,
+    isAndroid,
     loading,
     handleSignup,
     handleLogin,

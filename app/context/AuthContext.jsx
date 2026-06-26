@@ -237,6 +237,7 @@ export function AuthProvider({ children }) {
       setUser(currentUser);
       
       if (currentUser) {
+        await createUserDocument(currentUser);
         await fetchUserData(currentUser.uid);
         await fetchUserListings(currentUser.uid);
         await fetchSavedListings(currentUser.uid);

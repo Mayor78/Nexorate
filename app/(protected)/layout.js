@@ -5,23 +5,17 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function ProtectedLayout({ children }) {
-  const { user, userData, loading } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading) {
-      // No user -> go to auth
       if (!user) {
         router.push('/auth');
-      } 
-      // User exists but hasn't completed onboarding -> go to onboarding
-      else if (userData && !userData.onboardingCompleted) {
-        router.push('/onboarding');
       }
     }
-  }, [user, userData, loading, router]);
+  }, [user, loading, router]);
 
-  // Show loading spinner while checking auth
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -33,11 +27,9 @@ export default function ProtectedLayout({ children }) {
     );
   }
 
-  // Don't render anything if redirecting
-  if (!user || (userData && !userData.onboardingCompleted)) {
+  if (!user) {
     return null;
   }
 
-  // User is authenticated and onboarded, render the page
   return <>{children}</>;
 }

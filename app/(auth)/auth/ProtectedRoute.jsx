@@ -5,18 +5,16 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 
 export default function ProtectedRoute({ children }) {
-  const { user, userData, loading } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading) {
       if (!user) {
         router.push('/auth');
-      } else if (userData && !userData.onboardingCompleted) {
-        router.push('/onboarding');
       }
     }
-  }, [user, userData, loading, router]);
+  }, [user, loading, router]);
 
   if (loading) {
     return (
@@ -29,7 +27,7 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  if (!user || (userData && !userData.onboardingCompleted)) {
+  if (!user) {
     return null;
   }
 

@@ -110,6 +110,10 @@ export default function OnboardingPage() {
       
       const userRef = doc(db, 'users', user.uid);
       
+      // Check if user already has createdAt; if not, add it now
+      const existingSnap = await getDoc(userRef);
+      const existing = existingSnap.exists() ? existingSnap.data() : {};
+      
       const updateData = {
         displayName: formData.displayName,
         phone: formData.phone,
@@ -119,6 +123,11 @@ export default function OnboardingPage() {
         onboardingCompletedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
+      
+      // Only set createdAt if not already set
+      if (!existing.createdAt) {
+        updateData.createdAt = new Date().toISOString();
+      }
       
       if (formData.userType === 'business') {
         updateData.businessName = formData.businessName;

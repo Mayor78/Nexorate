@@ -12,6 +12,17 @@ export default function UserDetailModal({ isOpen, onClose, user }) {
 
   if (!isOpen || !user) return null;
 
+  const formatDate = (dateValue) => {
+    if (!dateValue) return 'N/A';
+    try {
+      const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
+      if (isNaN(date.getTime())) return 'N/A';
+      return date.toLocaleDateString();
+    } catch {
+      return 'N/A';
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
@@ -106,10 +117,7 @@ export default function UserDetailModal({ isOpen, onClose, user }) {
               <Calendar size={14} className="text-slate-500" />
               <div className="flex-1">
                 <p className="text-[10px] text-slate-500">Joined</p>
-                <p className="text-xs text-white">
-               
-                     {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
-                </p>
+                <p className="text-xs text-white">{formatDate(user.createdAt)}</p>
               </div>
             </div>
             
@@ -118,9 +126,7 @@ export default function UserDetailModal({ isOpen, onClose, user }) {
                 <Clock size={14} className="text-slate-500" />
                 <div className="flex-1">
                   <p className="text-[10px] text-slate-500">Last Login</p>
-                  <p className="text-xs text-white">
-                    {new Date(user.lastLogin).toLocaleDateString()}
-                  </p>
+                  <p className="text-xs text-white">{formatDate(user.lastLogin)}</p>
                 </div>
               </div>
             )}
