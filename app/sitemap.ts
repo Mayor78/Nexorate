@@ -69,11 +69,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     snap.docs.forEach((doc) => {
       const data = doc.data();
       const listingUrl = `${siteUrl}/listings/${doc.id}`;
-      const updatedAt = data.updatedAt || data.createdAt;
+      const rawDate = data.updatedAt || data.createdAt;
+      let lastMod = new Date();
+
+      if (rawDate) {
+        try {
+          // Firestore Timestamp has toDate(), ISO string works with new Date()
+          const d = typeof rawDate.toDate === 'function' ? rawDate.toDate() : new Date(rawDate);
+          if (!isNaN(d.getTime())) lastMod = d;
+        } catch {}
+      }
 
       entries.push({
         url: listingUrl,
-        lastModified: updatedAt ? new Date(updatedAt) : new Date(),
+        lastModified: lastMod,
         changeFrequency: 'weekly' as const,
         priority: 0.6,
       });
