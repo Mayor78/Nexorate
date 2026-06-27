@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { 
   MapPin, Phone, ChevronLeft, AlertCircle, Loader2, Share2, Flag, Zap, Star, BarChart3,
-  CheckCircle,
+  CheckCircle, Tag, ChevronRight,
   Shield
 } from 'lucide-react';
 import Link from 'next/link';
@@ -22,24 +22,95 @@ import BoostModal from '../../../components/listing/BoostModal';
 import RateSellerModal from '../../../components/listing/RateSellerModal';
 import BoostAnalytics from '../../../components/listing/BoostAnalytics';
 import { trackListingEvent } from '../../../lib/analytics';
+import { markListingAsSold, markListingAsActive } from '../../../lib/listings';
+import { useServerListing } from '../../../components/listing/ListingDataContext';
 import { motion } from 'framer-motion';
 
 export default function ListingDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, refreshUserData } = useAuth();
+  const serverListing = useServerListing();
   const [isLiked, setIsLiked] = useState(false);
   const [showPhone, setShowPhone] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const [showBoostModal, setShowBoostModal] = useState(false);
   const [showRateModal, setShowRateModal] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [markingSold, setMarkingSold] = useState(false);
   const [listing, setListing] = useState(null);
   const [relatedListings, setRelatedListings] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!serverListing);
   const [error, setError] = useState('');
 
+  const loadExtras = async (listingData) => {
+    // Increment views
+    try {
+      await updateDoc(doc(db, 'listings', params.id), { views: increment(1) });
+    } catch {}
+
+    trackListingEvent(params.id, 'view', { title: listingData.title }).catch(() => {});
+
+    // Fetch seller info
+    if (listingData.sellerId) {
+      try {
+        const sellerSnap = await getDoc(doc(db, 'users', listingData.sellerId));
+        if (sellerSnap.exists()) {
+          const sellerData = sellerSnap.data();
+          setListing(prev => prev ? {
+            ...prev,
+            seller: {
+              id: listingData.sellerId,
+              name: sellerData.displayName || 'Anonymous',
+              avatar: sellerData.avatar || '',
+              rating: sellerData.rating || 0,
+              totalListings: sellerData.totalListings || 0,
+              phone: sellerData.phone || '',
+              memberSince: new Date(sellerData.createdAt).getFullYear() || 'Unknown',
+            }
+          } : prev);
+        }
+      } catch {}
+    }
+
+    // Fetch related listings
+    if (listingData.category) {
+      try {
+        const relatedQuery = query(
+          collection(db, 'listings'),
+          where('category', '==', listingData.category),
+          where('status', '==', 'active'),
+          limit(6)
+        );
+        const relatedSnap = await getDocs(relatedQuery);
+        const related = relatedSnap.docs
+          .filter(doc => doc.id !== params.id)
+          .slice(0, 2)
+          .map(doc => {
+            const firstImage = doc.data().images?.[0];
+            return {
+              id: doc.id,
+              title: doc.data().title,
+              price: doc.data().price,
+              location: doc.data().location,
+              image: (typeof firstImage === 'object' ? firstImage?.url : firstImage) || '',
+              category: doc.data().category,
+            };
+          });
+        setRelatedListings(related);
+      } catch {}
+    }
+  };
+
+  // Use server-fetched listing if available, otherwise fetch from Firestore
   useEffect(() => {
+    if (serverListing) {
+      setListing(serverListing);
+      setLoading(false);
+      loadExtras(serverListing);
+      return;
+    }
+
     const fetchListing = async () => {
       try {
         setLoading(true);
@@ -53,54 +124,7 @@ export default function ListingDetailPage() {
 
         const listingData = { id: listingSnap.id, ...listingSnap.data() };
         setListing(listingData);
-
-        try {
-          await updateDoc(listingRef, { views: increment(1) });
-        } catch (err) {
-          console.warn('Could not increment views:', err);
-        }
-
-        trackListingEvent(params.id, 'view', { title: listingData.title }).catch(() => {});
-
-        if (listingData.sellerId) {
-          const sellerRef = doc(db, 'users', listingData.sellerId);
-          const sellerSnap = await getDoc(sellerRef);
-          if (sellerSnap.exists()) {
-            listingData.seller = {
-              id: listingData.sellerId,
-              name: sellerSnap.data().displayName || 'Anonymous',
-              avatar: sellerSnap.data().avatar || '',
-              rating: sellerSnap.data().rating || 0,
-              totalListings: sellerSnap.data().totalListings || 0,
-              phone: sellerSnap.data().phone || '',
-              memberSince: new Date(sellerSnap.data().createdAt).getFullYear() || 'Unknown',
-            };
-            setListing({ ...listingData });
-          }
-        }
-
-        const relatedQuery = query(
-          collection(db, 'listings'),
-          where('category', '==', listingData.category),
-          limit(6)
-        );
-        const relatedSnap = await getDocs(relatedQuery);
-        const related = relatedSnap.docs
-          .filter(doc => doc.id !== params.id && doc.data().sellerId !== listingData.sellerId)
-          .slice(0, 2)
-          .map(doc => {
-            const firstImage = doc.data().images?.[0];
-            return {
-              id: doc.id,
-              title: doc.data().title,
-              price: doc.data().price,
-              location: doc.data().location,
-              image: (typeof firstImage === 'object' ? firstImage?.url : firstImage) || '',
-              category: doc.data().category,
-            };
-          });
-        
-        setRelatedListings(related);
+        loadExtras(listingData);
       } catch (err) {
         console.error('Error fetching listing:', err);
         setError(err.message || 'Failed to load listing');
@@ -110,7 +134,41 @@ export default function ListingDetailPage() {
     };
 
     if (params.id) fetchListing();
-  }, [params.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.id, serverListing]);
+
+  const handleShare = async () => {
+    if (!listing) return;
+    const url = `https://www.nexorate.ng/listings/${params.id}`;
+    const text = `${listing.title} — ₦${Number(listing.price).toLocaleString()} on Nexorate`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: listing.title, text, url });
+      } catch {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        alert('Link copied to clipboard!');
+      } catch {}
+    }
+  };
+
+  const handleMarkSold = async () => {
+    if (!listing) return;
+    setMarkingSold(true);
+    const isSold = listing.status === 'sold';
+    const result = isSold
+      ? await markListingAsActive(params.id, listing.sellerId)
+      : await markListingAsSold(params.id, listing.sellerId);
+    if (result.success) {
+      setListing(prev => ({ ...prev, status: isSold ? 'active' : 'sold' }));
+      if (user?.uid === listing.sellerId) {
+        await refreshUserData();
+      }
+    }
+    setMarkingSold(false);
+  };
 
   if (loading) {
     return (
@@ -165,7 +223,11 @@ export default function ListingDetailPage() {
           </button>
           
           <div className="flex gap-2">
-            <button className="p-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition">
+            <button
+              onClick={handleShare}
+              className="p-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition"
+              title="Share this listing"
+            >
               <Share2 size={18} />
             </button>
             <button className="p-2 text-slate-500 hover:text-red-600 rounded-lg hover:bg-red-50 transition">
@@ -175,13 +237,34 @@ export default function ListingDetailPage() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 mt-6">
+      <div className="max-w-6xl mx-auto px-4 mt-4">
+        {/* Breadcrumbs */}
+        <nav className="flex items-center gap-1.5 text-xs text-slate-400 mb-3 overflow-x-auto whitespace-nowrap">
+          <Link href="/" className="hover:text-slate-600 transition-colors">Home</Link>
+          <ChevronRight size={12} />
+          <Link
+            href={listing.category ? `/categories/${listing.category.toLowerCase().replace(/\s+/g, '-')}` : '/categories'}
+            className="hover:text-slate-600 transition-colors"
+          >
+            {listing.category || 'Categories'}
+          </Link>
+          <ChevronRight size={12} />
+          <span className="text-slate-600 truncate">{listing.title}</span>
+        </nav>
+
         {/* Main Interface Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
           
           {/* LEFT & CENTER COLUMN: Media & Details */}
           <div className="md:col-span-2 space-y-5">
-            <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
+            <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm relative">
+              {listing.status === 'sold' && (
+                <div className="absolute inset-0 z-10 bg-black/40 flex items-center justify-center">
+                  <span className="bg-red-600 text-white text-sm font-black px-6 py-2 rounded-lg tracking-widest uppercase shadow-lg">
+                    Sold
+                  </span>
+                </div>
+              )}
               <ImageGallery 
                 images={listing.images}
                 title={listing.title}
@@ -194,9 +277,18 @@ export default function ListingDetailPage() {
             {/* Core Info */}
             <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm space-y-4">
               <div className="space-y-2">
-                <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">{listing.title}</h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">{listing.title}</h1>
+                  {listing.status === 'sold' && (
+                    <span className="bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full border border-red-200 flex-shrink-0">
+                      Sold
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-baseline gap-4">
-                  <p className="text-2xl md:text-3xl font-extrabold text-blue-600">{formatPrice(listing.price)}</p>
+                  <p className={`text-2xl md:text-3xl font-extrabold ${listing.status === 'sold' ? 'text-slate-400 line-through' : 'text-blue-600'}`}>
+                    {formatPrice(listing.price)}
+                  </p>
                 </div>
               </div>
               
@@ -229,6 +321,39 @@ export default function ListingDetailPage() {
 
             {/* Interactive Actions Panel */}
             <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-3">
+              {listing.status === 'sold' ? (
+                <>
+                  <div className="text-center py-4">
+                    <span className="inline-flex items-center gap-2 bg-red-50 text-red-700 text-sm font-semibold px-5 py-3 rounded-xl border border-red-200">
+                      <Tag size={16} /> This item has been sold
+                    </span>
+                  </div>
+
+                  {/* Mark as Sold / Mark as Active — seller only */}
+                  {user?.uid === listing.sellerId && (
+                    <button
+                      onClick={handleMarkSold}
+                      disabled={markingSold}
+                      className="w-full bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition disabled:opacity-50"
+                    >
+                      {markingSold ? <Loader2 size={16} className="animate-spin" /> : <Tag size={16} />}
+                      Mark as Available
+                    </button>
+                  )}
+
+                  <div className="grid grid-cols-1 gap-2 pt-2 border-t border-slate-100">
+                    {user?.uid === listing.sellerId && (
+                      <button
+                        onClick={() => setShowAnalytics(true)}
+                        className="w-full py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl font-medium text-xs transition flex items-center justify-center gap-2"
+                      >
+                        <BarChart3 size={14} /> View Analytics Control
+                      </button>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
               <MessageButton 
                 listing={{ ...listing, id: params.id }}
                 seller={seller}
@@ -273,6 +398,28 @@ export default function ListingDetailPage() {
                 </div>
               )}
 
+              {/* Mark as Sold / Mark as Active — seller only */}
+              {user?.uid === listing.sellerId && (
+                <button
+                  onClick={handleMarkSold}
+                  disabled={markingSold}
+                  className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition disabled:opacity-50 ${
+                    listing.status === 'sold'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                      : 'bg-slate-900 text-white hover:bg-slate-800 shadow-sm'
+                  }`}
+                >
+                  {markingSold ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : listing.status === 'sold' ? (
+                    <Tag size={16} />
+                  ) : (
+                    <CheckCircle size={16} />
+                  )}
+                  {listing.status === 'sold' ? 'Mark as Available' : 'Mark as Sold'}
+                </button>
+              )}
+
               {/* Utility Sub-actions */}
               <div className="grid grid-cols-1 gap-2 pt-2 border-t border-slate-100">
                 {user?.uid === listing.sellerId && (
@@ -293,6 +440,8 @@ export default function ListingDetailPage() {
                   </button>
                 )}
               </div>
+                </>
+              )}
             </div>
           </div>
 

@@ -3,15 +3,17 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Edit2, Trash2, Eye, Zap } from 'lucide-react';
+import { Edit2, Trash2, Eye, Zap, CheckCircle, Tag } from 'lucide-react';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
+import { markListingAsSold, markListingAsActive } from '../../lib/listings';
 import ConfirmModal from '../ui/ConfirmModal';
 
-export default function ListingItem({ listing, formatPrice, formatDate, onDelete }) {
+export default function ListingItem({ listing, formatPrice, formatDate, onDelete, onRefresh }) {
   const router = useRouter();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [marking, setMarking] = useState(false);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -34,6 +36,18 @@ export default function ListingItem({ listing, formatPrice, formatDate, onDelete
   const getFormattedDate = () => {
     if (!listing.createdAt) return 'Recently';
     return formatDate(listing.createdAt);
+  };
+
+  const handleMarkSold = async () => {
+    setMarking(true);
+    const isSold = listing.status === 'sold';
+    const result = isSold
+      ? await markListingAsActive(listing.id, listing.sellerId)
+      : await markListingAsSold(listing.id, listing.sellerId);
+    if (result.success) {
+      onRefresh?.();
+    }
+    setMarking(false);
   };
 
   return (
@@ -81,6 +95,25 @@ export default function ListingItem({ listing, formatPrice, formatDate, onDelete
               className="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-slate-600 hover:text-amber-600 hover:bg-white rounded-md transition"
             >
               <Edit2 size={14} /> Edit
+            </button>
+            <button
+              onClick={handleMarkSold}
+              disabled={marking}
+              className={`inline-flex items-center gap-1 px-2 py-1.5 text-xs font-medium rounded-md transition ${
+                listing.status === 'sold'
+                  ? 'text-emerald-600 hover:text-emerald-700 hover:bg-white'
+                  : 'text-slate-600 hover:text-emerald-600 hover:bg-white'
+              }`}
+              title={listing.status === 'sold' ? 'Mark as available' : 'Mark as sold'}
+            >
+              {marking ? (
+                <span className="w-3 h-3 border border-slate-400 border-t-transparent rounded-full animate-spin" />
+              ) : listing.status === 'sold' ? (
+                <Tag size={14} />
+              ) : (
+                <CheckCircle size={14} />
+              )}
+              {listing.status === 'sold' ? 'Unsell' : 'Sold'}
             </button>
             <button
               onClick={() => setShowDeleteModal(true)}

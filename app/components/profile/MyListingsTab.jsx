@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Package } from 'lucide-react';
 import ListingItem from './ListingItem';
 
-export default function MyListingsTab({ listings, formatPrice, formatDate, onDeleteListing }) {
+export default function MyListingsTab({ listings, formatPrice, formatDate, onDeleteListing, onRefresh }) {
   const activeListings = listings.filter(l => l.status !== 'sold');
   const soldListings = listings.filter(l => l.status === 'sold');
 
@@ -39,6 +39,7 @@ export default function MyListingsTab({ listings, formatPrice, formatDate, onDel
                     formatPrice={formatPrice} 
                     formatDate={formatDate}
                     onDelete={onDeleteListing}
+                    onRefresh={onRefresh}
                   />
                 ))}
               </div>
@@ -57,6 +58,7 @@ export default function MyListingsTab({ listings, formatPrice, formatDate, onDel
                     formatPrice={formatPrice} 
                     formatDate={formatDate}
                     onDelete={onDeleteListing}
+                    onRefresh={onRefresh}
                   />
                 ))}
               </div>

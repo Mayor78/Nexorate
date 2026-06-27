@@ -1,5 +1,5 @@
 import { db } from '../firebase/config';
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, increment } from 'firebase/firestore';
 
 export const getAllListings = async () => {
   try {
@@ -29,12 +29,20 @@ export const deleteListing = async (listingId) => {
   }
 };
 
-export const markListingSold = async (listingId) => {
-  return updateListing(listingId, { status: 'sold', soldAt: new Date().toISOString() });
+export const markListingSold = async (listingId, sellerId) => {
+  const result = await updateListing(listingId, { status: 'sold', soldAt: new Date().toISOString() });
+  if (result.success && sellerId) {
+    await updateDoc(doc(db, 'users', sellerId), { totalSales: increment(1) });
+  }
+  return result;
 };
 
-export const markListingActive = async (listingId) => {
-  return updateListing(listingId, { status: 'active', soldAt: null });
+export const markListingActive = async (listingId, sellerId) => {
+  const result = await updateListing(listingId, { status: 'active', soldAt: null });
+  if (result.success && sellerId) {
+    await updateDoc(doc(db, 'users', sellerId), { totalSales: increment(-1) });
+  }
+  return result;
 };
 
 export const removeBoost = async (listingId) => {

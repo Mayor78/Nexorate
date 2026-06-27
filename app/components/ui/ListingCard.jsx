@@ -76,17 +76,28 @@ function ListingCard({ listing }) {
           </button>
 
           {/* Slide-up CTA on hover */}
-          <div className="absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-            <span className="w-full block text-center bg-black text-white text-[10px] font-bold tracking-widest py-3 hover:bg-gray-900 transition-colors">
-              VIEW LISTING
-            </span>
-          </div>
+          {listing.status !== 'sold' && (
+            <div className="absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+              <span className="w-full block text-center bg-black text-white text-[10px] font-bold tracking-widest py-3 hover:bg-gray-900 transition-colors">
+                VIEW LISTING
+              </span>
+            </div>
+          )}
+
+          {/* Sold overlay */}
+          {listing.status === 'sold' && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
+              <span className="bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded tracking-widest uppercase">
+                Sold
+              </span>
+            </div>
+          )}
         </div>
 
-        <p className="text-black text-xs font-semibold mb-1 truncate">
+        <p className={`text-black text-xs font-semibold mb-1 truncate ${listing.status === 'sold' ? 'text-gray-400' : ''}`}>
           {listing.title}
         </p>
-        <p className="text-black text-sm font-bold">
+        <p className={`text-sm font-bold ${listing.status === 'sold' ? 'text-gray-400 line-through' : 'text-black'}`}>
           {formatPrice(listing.price)}
         </p>
       </Link>

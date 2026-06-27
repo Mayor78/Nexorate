@@ -16,23 +16,24 @@ import { formatPrice, formatDate } from '../../lib/formatters';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { 
-    user, 
-    userData, 
-    userListings, 
-    savedListings, 
-    listingsLoading, 
-    loading, 
-    logout, 
+  const {
+    user,
+    userData,
+    userListings,
+    savedListings,
+    listingsLoading,
+    loading,
+    logout,
     refreshUserData,
-    totalListings,    // Add this
-    activeListings,   // Add this
-    soldListings      // Add this
+    totalListings,
+    activeListings,
+    soldListings,
   } = useAuth();
   const { success: showSuccess, error: showError } = useToast();
-  const [activeTab, setActiveTab] = useState('listings');
+  const [activeTab, setActiveTab]       = useState('listings');
   const [showEditModal, setShowEditModal] = useState(false);
 
+  // ── handlers (unchanged) ────────────────────────────────────────────────
   const handleLogout = async () => {
     try {
       await logout();
@@ -44,72 +45,63 @@ export default function ProfilePage() {
     }
   };
 
-  const handleEditProfile = () => {
-    setShowEditModal(true);
-  };
+  const handleEditProfile  = () => setShowEditModal(true);
+  const handleDeleteListing = async () => await refreshUserData();
 
-  const handleDeleteListing = async () => {
-    await refreshUserData();
-  };
-
-  // Show loading state
-  if (loading || listingsLoading) {
-    return <LoadingSpinner message="Loading profile..." />;
-  }
+  // ── loading / guard ──────────────────────────────────────────────────────
+  if (loading || listingsLoading) return <LoadingSpinner message="Loading profile..." />;
 
   if (!userData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-slate-600">User data not found</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F1F6FB' }}>
+        <p className="text-sm" style={{ color: '#64748B' }}>User data not found</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 pb-20 md:pb-0">
-      {/* Profile Header */}
-      <ProfileHeader 
+    <div className="min-h-screen pb-20 md:pb-0" style={{ backgroundColor: '#F1F6FB' }}>
+
+      {/* Profile Header (2-col card + sidebar) */}
+      <ProfileHeader
         userData={userData}
         totalListings={totalListings}
         activeListings={activeListings}
         soldListings={soldListings}
         onEdit={handleEditProfile}
       />
-      
+
       {/* Contact Info Bar */}
       <ContactInfoBar userData={userData} />
-      
+
       {/* Tabs */}
-      <ProfileTabs 
-        activeTab={activeTab} 
+      <ProfileTabs
+        activeTab={activeTab}
         onTabChange={setActiveTab}
         listingsCount={userListings.length}
         savedCount={savedListings.length}
       />
-      
+
       {/* Tab Content */}
       <div className="px-4 md:px-6 py-6">
         <div className="max-w-6xl mx-auto">
           {activeTab === 'listings' && (
-            <MyListingsTab 
+            <MyListingsTab
               listings={userListings}
               formatPrice={formatPrice}
               formatDate={formatDate}
               onDeleteListing={handleDeleteListing}
+              onRefresh={refreshUserData}
             />
           )}
-          
           {activeTab === 'saved' && (
-            <SavedListingsTab 
+            <SavedListingsTab
               savedListings={savedListings}
               formatPrice={formatPrice}
             />
           )}
-          
           {activeTab === 'settings' && (
-            <SettingsTab 
+            <SettingsTab
               userData={userData}
               onLogout={handleLogout}
               onEditProfile={handleEditProfile}
@@ -119,12 +111,12 @@ export default function ProfilePage() {
       </div>
 
       {/* Edit Profile Modal */}
-     <EditProfileModal 
-  isOpen={showEditModal}
-  onClose={() => setShowEditModal(false)}
-  user={user}
-  userData={userData}
-/>
+      <EditProfileModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        user={user}
+        userData={userData}
+      />
     </div>
   );
 }

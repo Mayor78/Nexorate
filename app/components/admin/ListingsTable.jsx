@@ -28,12 +28,12 @@ export default function ListingsTable({ listings, loading, onRefresh, onViewList
     filtered = filtered.filter(l => l.status === statusFilter);
   }
 
-  const handleAction = async (action, listingId) => {
+  const handleAction = async (action, listingId, listing) => {
     try {
       let r; 
       switch (action) { 
-        case 'markSold': r = await markListingSold(listingId); break; 
-        case 'markActive': r = await markListingActive(listingId); break; 
+        case 'markSold': r = await markListingSold(listingId, listing?.sellerId); break; 
+        case 'markActive': r = await markListingActive(listingId, listing?.sellerId); break; 
         case 'delete': r = await deleteListing(listingId); break; 
         case 'removeBoost': r = await removeBoost(listingId); break; 
         default: return; 
@@ -335,7 +335,7 @@ export default function ListingsTable({ listings, loading, onRefresh, onViewList
       <ConfirmActionModal 
         isOpen={!!actionModal} 
         onClose={() => setActionModal(null)} 
-        onConfirm={() => actionModal && handleAction(actionModal.action, actionModal.listing.id)} 
+        onConfirm={() => actionModal && handleAction(actionModal.action, actionModal.listing.id, actionModal.listing)} 
         title="Confirm Action" 
         message={actionModal?.label || ''} 
         confirmText={actionModal?.action || 'Confirm'} 

@@ -129,7 +129,7 @@ export default function HeroSection() {
        
 
         {/* ── Fanned product cards ── */}
-        <div className="relative mt-2 w-full flex justify-center" style={{ height: '260px' }}>
+        <div className="relative mt-2 w-full flex  justify-center" style={{ height: '260px' }}>
           {PRODUCT_CARDS.map((card) => (
             <div
               key={card.id}

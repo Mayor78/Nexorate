@@ -78,7 +78,7 @@ export default function Footer() {
             href="/post"
             className="inline-block px-6 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition"
           >
-            Start Selling — It's Free
+            Start Selling — It&apos;s Free
           </Link>
         </motion.div>
 
